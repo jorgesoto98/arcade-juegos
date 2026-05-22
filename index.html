@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arcade · My games</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root { --ink:#eef2ff; --dim:#9aa6cc; --accent:#7c5cff; --accent-2:#22d3ee; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body {
+      font-family:"Sora",system-ui,sans-serif; color:var(--ink); min-height:100dvh;
+      background:#0b1020;
+      padding:48px 20px; display:flex; flex-direction:column; align-items:center; gap:36px;
+    }
+    header { text-align:center; }
+    h1 { font-size:clamp(2rem,7vw,3rem); font-weight:800; letter-spacing:-0.02em; }
+    h1 span { color:var(--accent-2); }
+    p.sub { color:var(--dim); margin-top:10px; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+      gap:18px; width:100%; max-width:760px; }
+    a.card {
+      text-decoration:none; color:var(--ink); border-radius:18px; padding:24px;
+      background:rgba(255,255,255,0.05);
+      border:1px solid rgba(255,255,255,0.08); transition:transform 160ms ease, border-color 160ms ease;
+      display:flex; flex-direction:column; gap:10px; min-height:150px;
+    }
+    a.card:hover { transform:translateY(-4px); border-color:rgba(124,92,255,0.5); }
+    .emoji { font-size:2.4rem; }
+    .card h2 { font-size:1.2rem; }
+    .card .desc { color:var(--dim); font-size:0.88rem; line-height:1.45; }
+    .soon { opacity:0.45; pointer-events:none; }
+    .soon .tag { font-size:0.7rem; color:var(--accent-2); text-transform:uppercase; letter-spacing:0.1em; }
+    footer { color:var(--dim); font-size:0.8rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>My <span>Arcade</span></h1>
+    <p class="sub">Web games collection · no installs, just play</p>
+  </header>
+
+  <div class="grid">
+    <a class="card" href="sliding-puzzle/index.html">
+      <div class="emoji">🧩</div>
+      <h2>Sliding Puzzle</h2>
+      <p class="desc">Order the numbers by sliding tiles — or entire rows and columns in one tap.</p>
+    </a>
+
+    <div class="card soon">
+      <div class="emoji">➕</div>
+      <h2>Coming soon</h2>
+      <p class="desc tag">New game here</p>
+    </div>
+  </div>
+
+  <footer>Made with HTML · CSS · JavaScript</footer>
+</body>
+</html>

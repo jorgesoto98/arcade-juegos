@@ -1,0 +1,12 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode/
+.idea/
+
+# Artefactos de pruebas / herramientas
+.playwright-mcp/
+*.log
+node_modules/
