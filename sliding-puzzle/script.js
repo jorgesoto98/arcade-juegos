@@ -20,18 +20,24 @@ const winEmoji  = document.getElementById("winEmoji");
 const winAgain  = document.getElementById("winPlayAgain");
 const winMenu   = document.getElementById("winMenu");
 const soundToggle = document.getElementById("soundToggle");
+const ghostToggle = document.getElementById("ghostToggle");
 const confettiCanvas = document.getElementById("confetti");
 const menuEl    = document.getElementById("menu");
 const gameEl    = document.getElementById("game");
 const startBtn  = document.getElementById("startBtn");
+const dailyBtn  = document.getElementById("dailyBtn");
+const modeBadge = document.getElementById("modeBadge");
 const sizeCards = document.querySelectorAll(".size-card");
 
 const state = {
   n: 4,            // dimensión del tablero (n x n)
   chosenSize: 4,   // tamaño seleccionado en el menú
+  mode: "free",    // "free" (mezcla aleatoria) | "daily" (reto diario determinista)
   tiles: [],       // array de longitud n*n; valor 0 = hueco
   tileEls: new Map(), // valor -> elemento DOM
   moves: 0,
+  moveSeq: [],     // secuencia de índices tocados (para el fantasma del récord)
+  scramble: [],    // arreglo inicial tras mezclar (punto de partida del fantasma)
   startTime: null,
   timerId: null,
   playing: false,
@@ -40,6 +46,18 @@ const state = {
   autoSolved: false,  // la última victoria fue por el botón Solve
   maxCombo: 1,        // mayor cantidad de fichas movidas de un solo toque
   soundOn: true,
+};
+
+/* Estado del fantasma del récord (replay semitransparente de tu mejor solución) */
+const ghost = {
+  on: true,          // preferencia del usuario
+  els: new Map(),    // valor -> elemento DOM de la capa fantasma
+  layer: null,       // contenedor de la capa fantasma
+  tiles: [],         // arreglo actual del replay
+  scramble: [],      // punto de partida del replay
+  sequence: [],      // movimientos a reproducir
+  step: 0,           // índice del movimiento actual
+  timer: null,       // setTimeout en curso
 };
 
 /* ---------- Utilidades de coordenadas ---------- */
@@ -65,45 +83,44 @@ function isSolved() {
    Devuelve el NÚMERO de fichas desplazadas (0 si el movimiento no es
    válido porque la ficha no está alineada con el hueco). Reordena
    state.tiles en el sitio. */
-function slide(clickIndex) {
-  const bi = blankIndex();
-  const br = rowOf(bi), bc = colOf(bi);
-  const cr = rowOf(clickIndex), cc = colOf(clickIndex);
+/* Aplica el deslizamiento sobre un arreglo cualquiera (puro, sin tocar el
+   estado global). Lo usan tanto el juego real como el replay del fantasma. */
+function slideOnArray(arr, n, clickIndex) {
+  const bi = arr.indexOf(0);
+  const br = Math.floor(bi / n), bc = bi % n;
+  const cr = Math.floor(clickIndex / n), cc = clickIndex % n;
+  const at = (r, c) => r * n + c;
 
   if (cr === br && cc === bc) return 0; // tocó el propio hueco
 
   if (cr === br) {
     // Misma fila: desplazamiento horizontal
     if (cc < bc) {
-      // huecos hacia la izquierda: empujar fichas [cc..bc-1] a la derecha
-      for (let c = bc; c > cc; c--) {
-        state.tiles[idx(br, c)] = state.tiles[idx(br, c - 1)];
-      }
+      // hueco a la derecha: empujar fichas [cc..bc-1] a la derecha
+      for (let c = bc; c > cc; c--) arr[at(br, c)] = arr[at(br, c - 1)];
     } else {
-      for (let c = bc; c < cc; c++) {
-        state.tiles[idx(br, c)] = state.tiles[idx(br, c + 1)];
-      }
+      for (let c = bc; c < cc; c++) arr[at(br, c)] = arr[at(br, c + 1)];
     }
-    state.tiles[clickIndex] = 0;
+    arr[clickIndex] = 0;
     return Math.abs(cc - bc);
   }
 
   if (cc === bc) {
     // Misma columna: desplazamiento vertical
     if (cr < br) {
-      for (let r = br; r > cr; r--) {
-        state.tiles[idx(r, bc)] = state.tiles[idx(r - 1, bc)];
-      }
+      for (let r = br; r > cr; r--) arr[at(r, bc)] = arr[at(r - 1, bc)];
     } else {
-      for (let r = br; r < cr; r++) {
-        state.tiles[idx(r, bc)] = state.tiles[idx(r + 1, bc)];
-      }
+      for (let r = br; r < cr; r++) arr[at(r, bc)] = arr[at(r + 1, bc)];
     }
-    state.tiles[clickIndex] = 0;
+    arr[clickIndex] = 0;
     return Math.abs(cr - br);
   }
 
   return 0; // no alineada con el hueco
+}
+
+function slide(clickIndex) {
+  return slideOnArray(state.tiles, state.n, clickIndex);
 }
 
 /* Lista de índices de fichas que se deslizarían al tocar clickIndex
@@ -136,6 +153,7 @@ function tileMetrics() {
 function buildBoard() {
   boardEl.innerHTML = "";
   state.tileEls.clear();
+  buildGhostLayer(); // capa fantasma detrás de las fichas reales
   const { size } = tileMetrics();
   const fontSize = `clamp(1.1rem, ${Math.round(40 / state.n)}vw, 2.6rem)`;
 
@@ -200,6 +218,123 @@ function clearPreview() {
   state.tileEls.forEach((el) => el.classList.remove("preview"));
 }
 
+/* ---------- Fantasma del récord ----------
+   Reproduce en bucle, en una capa semitransparente detrás de las fichas,
+   la secuencia de movimientos de tu mejor partida. En modo diario el
+   fantasma corre sobre el MISMO puzzle, así que compites contra tu récord;
+   en modo libre es un replay ambiental de tu mejor solución por tamaño.
+   Se omite si no hay récord guardado o con prefers-reduced-motion. */
+function prefersReducedMotion() {
+  return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+/* Construye los elementos DOM de la capa fantasma (uno por ficha). */
+function buildGhostLayer() {
+  const layer = document.createElement("div");
+  layer.className = "ghost-layer";
+  layer.setAttribute("aria-hidden", "true");
+  ghost.els.clear();
+  const { size } = tileMetrics();
+  const fontSize = `clamp(1.1rem, ${Math.round(40 / state.n)}vw, 2.6rem)`;
+  for (let v = 1; v < state.n * state.n; v++) {
+    const el = document.createElement("div");
+    el.className = "ghost-tile";
+    el.textContent = v;
+    el.style.width = size;
+    el.style.height = size;
+    el.style.fontSize = fontSize;
+    layer.appendChild(el);
+    ghost.els.set(v, el);
+  }
+  ghost.layer = layer;
+  boardEl.appendChild(layer);
+}
+
+/* Lee del récord actual (según modo) el scramble + la secuencia del fantasma.
+   Devuelve true si hay un replay válido para el tamaño actual. */
+function refreshGhostRecord() {
+  const rec = readRecord(currentKey());
+  if (rec && Array.isArray(rec.scramble) && Array.isArray(rec.sequence) &&
+      rec.scramble.length === state.n * state.n && rec.sequence.length) {
+    ghost.scramble = rec.scramble;
+    ghost.sequence = rec.sequence;
+    return true;
+  }
+  ghost.scramble = [];
+  ghost.sequence = [];
+  return false;
+}
+
+function showGhostLayer() { if (ghost.layer) ghost.layer.style.display = ""; }
+function hideGhostLayer() { if (ghost.layer) ghost.layer.style.display = "none"; }
+
+function stopGhost() {
+  if (ghost.timer) { clearTimeout(ghost.timer); ghost.timer = null; }
+}
+
+/* Coloca las fichas fantasma según ghost.tiles (mismas métricas que el tablero). */
+function positionGhost() {
+  const { step } = tileMetrics();
+  ghost.tiles.forEach((v, i) => {
+    if (v === 0) return;
+    const el = ghost.els.get(v);
+    if (!el) return;
+    el.style.left = `calc(${step} * ${i % state.n})`;
+    el.style.top  = `calc(${step} * ${Math.floor(i / state.n)})`;
+  });
+}
+
+/* Inicia (o reinicia) el replay del fantasma si procede. */
+function startGhost() {
+  stopGhost();
+  const has = refreshGhostRecord();
+  if (!has || !ghost.on || prefersReducedMotion() || state.solvedFlag) {
+    hideGhostLayer();
+    return;
+  }
+  showGhostLayer();
+  ghost.tiles = ghost.scramble.slice();
+  ghost.step = 0;
+  positionGhost();
+  ghost.timer = setTimeout(ghostTick, 900); // pausa breve antes de arrancar
+}
+
+/* Un paso del replay: avanza un movimiento o reinicia el bucle al terminar. */
+function ghostTick() {
+  if (!ghost.on || prefersReducedMotion() || state.solvedFlag || !ghost.sequence.length) {
+    stopGhost();
+    return;
+  }
+  if (ghost.step >= ghost.sequence.length) {
+    // fin del replay → pausa y vuelve a empezar
+    ghost.tiles = ghost.scramble.slice();
+    ghost.step = 0;
+    positionGhost();
+    ghost.timer = setTimeout(ghostTick, 1600);
+    return;
+  }
+  slideOnArray(ghost.tiles, state.n, ghost.sequence[ghost.step]);
+  ghost.step++;
+  positionGhost();
+  ghost.timer = setTimeout(ghostTick, 420);
+}
+
+function loadGhostPref() {
+  ghost.on = localStorage.getItem("slidingpuzzle.ghost") !== "off";
+  reflectGhostUI();
+}
+function reflectGhostUI() {
+  ghostToggle.classList.toggle("is-muted", !ghost.on);
+  ghostToggle.setAttribute("aria-pressed", String(ghost.on));
+}
+function toggleGhost() {
+  ghost.on = !ghost.on;
+  localStorage.setItem("slidingpuzzle.ghost", ghost.on ? "on" : "off");
+  reflectGhostUI();
+  if (ghost.on) startGhost();
+  else { stopGhost(); hideGhostLayer(); }
+}
+
 /* ---------- Interacción ---------- */
 function onTileClick(value) {
   if (state.solvedFlag || state.solving) return;
@@ -210,6 +345,7 @@ function onTileClick(value) {
   if (!state.playing) startTimer();
   state.moves++;
   movesEl.textContent = state.moves;
+  state.moveSeq.push(i); // registra el índice tocado para el fantasma del récord
 
   if (count > 1) state.maxCombo = Math.max(state.maxCombo, count);
   playSlide(count);
@@ -271,16 +407,52 @@ function toggleSound() {
   if (state.soundOn) tone(660, 0.1, "sine", 0.06); // pequeño feedback al activar
 }
 
+/* ---------- PRNG seedeable (para el reto diario) ----------
+   mulberry32: PRNG rápido y determinista a partir de una semilla de 32 bits.
+   La misma semilla produce SIEMPRE la misma secuencia → mismo puzzle. */
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+/* Hash de cadena a entero de 32 bits (FNV-1a) para sembrar el PRNG. */
+function hashSeed(str) {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+/* Fecha de hoy como número YYYYMMDD (semilla base del reto diario). */
+function todayYMD() {
+  const d = new Date();
+  return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+}
+/* Semilla del reto diario: depende de la fecha y del tamaño elegido, así cada
+   tamaño tiene su propio puzzle fijo del día (igual para todos). */
+function dailySeed() {
+  return hashSeed(`${todayYMD()}-${state.n}`);
+}
+
 /* ---------- Mezcla solucionable ----------
-   Hacemos movimientos aleatorios válidos desde el estado resuelto:
-   así el puzzle SIEMPRE tiene solución (sin problemas de paridad). */
-function shuffle() {
+   Hacemos movimientos aleatorios válidos desde el estado resuelto usando el
+   rng dado: así el puzzle SIEMPRE tiene solución (sin problemas de paridad).
+   Con Math.random la mezcla es aleatoria; con un PRNG seedeado es determinista. */
+function scrambleTiles(rng) {
   state.tiles = solvedTiles(state.n);
   const n = state.n;
   const reps = n * n * 18;
   let lastBlank = -1;
+  let k = 0;
 
-  for (let k = 0; k < reps; k++) {
+  // Hace 'reps' movimientos; si por casualidad termina resuelto, sigue moviendo
+  // con el MISMO rng (preserva el determinismo) hasta quedar desordenado.
+  while (k < reps || isSolved()) {
     const bi = blankIndex();
     const br = rowOf(bi), bc = colOf(bi);
     const candidates = [];
@@ -294,23 +466,37 @@ function shuffle() {
     }
     // evita deshacer el movimiento anterior inmediatamente
     const filtered = candidates.filter((x) => x !== lastBlank);
-    const pick = (filtered.length ? filtered : candidates)[
-      Math.floor(Math.random() * (filtered.length ? filtered.length : candidates.length))
-    ];
+    const pool = filtered.length ? filtered : candidates;
+    const pick = pool[Math.floor(rng() * pool.length)];
     lastBlank = bi;
     slide(pick);
+    k++;
+    if (k > reps + 500) break; // salvaguarda contra bucle infinito
   }
+}
 
-  // garantiza que no quede ya resuelto
-  if (isSolved()) return shuffle();
-
+/* Aplica una mezcla con el rng dado y reinicia el estado para empezar a jugar. */
+function applyScramble(rng) {
+  scrambleTiles(rng);
   resetProgress();
+  state.moveSeq = [];
+  state.scramble = state.tiles.slice();
   state.solvedFlag = false;
   state.solving = false;
   state.autoSolved = false;
   boardEl.classList.remove("solved");
   winOverlay.hidden = true;
   positionTiles();
+  startGhost();
+}
+
+/* Re-mezcla según el modo actual: libre = nueva aleatoria; diario = mismo
+   puzzle del día (determinista, sirve de "reiniciar"). */
+function reshuffle() {
+  applyScramble(state.mode === "daily" ? mulberry32(dailySeed()) : Math.random);
+  loadBest();
+  updateModeUI();
+  updateControlsEnabled();
 }
 
 /* ---------- Timer ---------- */
@@ -365,23 +551,38 @@ function renderStars(stars) {
   winStars.innerHTML = html;
 }
 
-/* ---------- Victoria + récords ---------- */
-function bestKey() { return `slidingpuzzle.best.${state.n}`; }
+/* ---------- Victoria + récords ----------
+   El récord libre es por tamaño; el del reto diario es por fecha+tamaño. Cada
+   récord guarda también el scramble y la secuencia de jugadas para el fantasma. */
+function bestKey()    { return `slidingpuzzle.best.${state.n}`; }
+function dailyKey()   { return `slidingpuzzle.daily.${todayYMD()}.${state.n}`; }
+function currentKey() { return state.mode === "daily" ? dailyKey() : bestKey(); }
+
+/* Lee y parsea un registro de localStorage de forma segura (null si falta o está corrupto). */
+function readRecord(key) {
+  try { return JSON.parse(localStorage.getItem(key) || "null"); }
+  catch (_) { return null; }
+}
 
 function loadBest() {
-  const raw = localStorage.getItem(bestKey());
-  if (!raw) { bestEl.textContent = "—"; return null; }
-  const b = JSON.parse(raw);
+  const b = readRecord(currentKey());
+  if (!b) { bestEl.textContent = "—"; return null; }
   bestEl.textContent = `${b.moves} moves · ${fmtTime(b.seconds || 0)}`;
   return b;
 }
 
 function saveBestIfBetter(moves, seconds) {
-  const prev = JSON.parse(localStorage.getItem(bestKey()) || "null");
+  const key = currentKey();
+  const prev = readRecord(key);
   // mejor = menos movimientos; a igualdad de movimientos, menor tiempo
-  const better = !prev || moves < prev.moves || (moves === prev.moves && seconds < prev.seconds);
+  const better = !prev || moves < prev.moves ||
+    (moves === prev.moves && (prev.seconds == null || seconds < prev.seconds));
   if (better) {
-    localStorage.setItem(bestKey(), JSON.stringify({ moves, seconds }));
+    localStorage.setItem(key, JSON.stringify({
+      moves, seconds,
+      scramble: state.scramble,
+      sequence: state.moveSeq.slice(),
+    }));
     loadBest();
     return true;
   }
@@ -392,6 +593,8 @@ function checkWin() {
   if (!isSolved()) return;
   state.solvedFlag = true;
   stopTimer();
+  stopGhost();
+  hideGhostLayer();
   clearPreview();
   boardEl.classList.add("solved");
   positionTiles();
@@ -576,6 +779,8 @@ async function solvePuzzle() {
   state.autoSolved = true;
   clearPreview();
   stopTimer();
+  stopGhost();
+  hideGhostLayer();
   updateControlsEnabled();
   const solveLabel = solveBtn.textContent;
   solveBtn.textContent = "Solving…";
@@ -608,20 +813,36 @@ function selectSize(n) {
   sizeCards.forEach((c) => c.classList.toggle("is-active", Number(c.dataset.size) === n));
 }
 
-function startGame() {
+/* Arranca una partida en el modo indicado: "free" (aleatorio) o "daily". */
+function beginGame(mode) {
+  state.mode = mode;
   state.n = state.chosenSize;
   state.tiles = solvedTiles(state.n);
-  state.autoSolved = false;
   buildBoard();
-  loadBest();
-  shuffle();
-  updateControlsEnabled();
   menuEl.hidden = true;
   gameEl.hidden = false;
+  applyScramble(mode === "daily" ? mulberry32(dailySeed()) : Math.random);
+  loadBest();
+  updateModeUI();
+  updateControlsEnabled();
+}
+
+/* Refleja el modo en la UI: distintivo del reto diario y etiqueta del botón. */
+function updateModeUI() {
+  const daily = state.mode === "daily";
+  modeBadge.hidden = !daily;
+  if (daily) {
+    const label = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    modeBadge.textContent = `🗓️ Daily · ${label}`;
+  }
+  // En diario, "Shuffle" reinicia el MISMO puzzle → se etiqueta "Restart".
+  shuffleBtn.textContent = daily ? "Restart" : "Shuffle";
 }
 
 function showMenu() {
   stopTimer();
+  stopGhost();
+  hideGhostLayer();
   winOverlay.hidden = true;
   gameEl.hidden = true;
   menuEl.hidden = false;
@@ -632,20 +853,23 @@ function showMenu() {
 sizeCards.forEach((card) => {
   card.addEventListener("click", () => selectSize(Number(card.dataset.size)));
 });
-startBtn.addEventListener("click", startGame);
-shuffleBtn.addEventListener("click", () => { if (!state.solving) shuffle(); });
+startBtn.addEventListener("click", () => beginGame("free"));
+dailyBtn.addEventListener("click", () => beginGame("daily"));
+shuffleBtn.addEventListener("click", () => { if (!state.solving) reshuffle(); });
 solveBtn.addEventListener("click", solvePuzzle);
-winAgain.addEventListener("click", () => shuffle());
+winAgain.addEventListener("click", () => reshuffle());
 winMenu.addEventListener("click", showMenu);
 soundToggle.addEventListener("click", toggleSound);
+ghostToggle.addEventListener("click", toggleGhost);
 
 // Reposiciona al cambiar el tamaño de la ventana (los porcentajes ya son
 // responsive; forzamos repintado por si el navegador lo necesita).
-window.addEventListener("resize", () => positionTiles());
+window.addEventListener("resize", () => { positionTiles(); positionGhost(); });
 
 /* ---------- Arranque ---------- */
 function init() {
   loadSoundPref();
+  loadGhostPref();
   selectSize(4); // 4×4 preseleccionado en el menú; el tablero se crea al pulsar Start
 }
 init();
