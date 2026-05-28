@@ -29,26 +29,29 @@
         radial-gradient(140% 90% at 50% -10%, rgba(124, 92, 255, 0.16), transparent 55%),
         radial-gradient(120% 80% at 50% 120%, rgba(34, 211, 238, 0.10), transparent 55%),
         var(--bg-0);
-      min-height: 100dvh;
-      display: grid;
-      place-items: center;
-      padding: 16px 14px 24px;
-      overflow-x: hidden;
+      height: 100dvh;
+      display: flex;
+      justify-content: center;
+      overflow: hidden; /* todo cabe en el viewport: sin scroll */
       -webkit-tap-highlight-color: transparent;
     }
 
+    /* Columna a pantalla completa: cabecera + HUD + juego + controles caben sin scroll. */
     .app {
       width: 100%;
       max-width: 420px;
+      height: 100dvh;
       display: flex;
       flex-direction: column;
       align-items: stretch;
-      gap: 14px;
+      gap: 10px;
+      padding: 10px 12px 12px;
     }
 
     /* ===== Back-link al hub ===== */
     .back-link {
       align-self: flex-start;
+      flex: 0 0 auto;
       text-decoration: none;
       color: var(--ink-dim);
       font-weight: 600;
@@ -62,16 +65,16 @@
     .back-link:hover { color: var(--ink); border-color: rgba(255, 255, 255, 0.24); }
     .back-link:active { transform: translateY(1px); }
 
-    /* ===== Cabecera ===== */
-    .head { text-align: center; }
+    /* ===== Cabecera (compacta para ahorrar alto vertical) ===== */
+    .head { text-align: center; flex: 0 0 auto; }
     .title {
-      font-size: clamp(1.8rem, 7vw, 2.4rem);
+      font-size: clamp(1.5rem, 5.5vw, 2.1rem);
       font-weight: 800;
       letter-spacing: -0.02em;
       line-height: 1;
     }
     .title span { color: var(--accent-2); margin-left: 0.18em; }
-    .subtitle { margin-top: 6px; color: var(--ink-dim); font-size: 0.86rem; }
+    .subtitle { margin-top: 4px; color: var(--ink-dim); font-size: 0.82rem; }
 
     /* ===== HUD: score | next | best ===== */
     .hud {
@@ -79,12 +82,13 @@
       grid-template-columns: 1fr auto 1fr;
       align-items: stretch;
       gap: 10px;
+      flex: 0 0 auto;
     }
     .stat {
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 14px;
-      padding: 10px 8px;
+      padding: 8px 8px;
       text-align: center;
       display: flex;
       flex-direction: column;
@@ -127,11 +131,23 @@
     }
     #nextCanvas { width: 56px; height: 56px; display: block; }
 
+    /* ===== Zona de juego: ocupa el alto restante de la columna =====
+     * .stage-wrap toma el espacio sobrante (flex:1) y centra el tablero;
+     * fitStage() en JS mide este hueco y fija el tamaño de .stage en px,
+     * conservando la proporción vertical 360/560 del mundo. */
+    .stage-wrap {
+      flex: 1 1 auto;
+      min-height: 0; /* permite que el hijo encoja en lugar de desbordar */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
     /* ===== Tablero / contenedor (las "paredes" son el borde) ===== */
     .stage {
       position: relative;
-      width: min(92vw, calc(78vh * 0.643), 400px);
       aspect-ratio: 360 / 560;
+      max-width: 100%;
+      max-height: 100%;
       margin: 0 auto;
       border-radius: var(--radius);
       border: 2px solid rgba(255, 255, 255, 0.10);
@@ -174,7 +190,7 @@
       border-radius: 18px;
       box-shadow: var(--shadow);
     }
-    .over-emoji { font-size: 2.6rem; filter: drop-shadow(0 4px 12px rgba(124, 92, 255, 0.6)); }
+    .over-mark { width: 58px; height: 58px; filter: drop-shadow(0 4px 12px rgba(124, 92, 255, 0.6)); }
     .over-card h2 { margin: 8px 0 4px; font-size: 1.5rem; color: var(--accent-2); }
     .over-card .over-sub { color: var(--ink-dim); font-size: 0.86rem; margin-bottom: 4px; }
     .over-score {
@@ -184,8 +200,8 @@
       margin: 2px 0 18px;
     }
 
-    /* ===== Controles ===== */
-    .controls { display: flex; align-items: center; gap: 10px; }
+    /* ===== Controles (siempre visibles al pie de la columna) ===== */
+    .controls { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
     .controls .btn { flex: 1; }
 
     .btn {
@@ -213,7 +229,6 @@
     .btn-ghost:hover { border-color: rgba(255, 255, 255, 0.28); }
 
     .icon-btn {
-      font-size: 1.15rem;
       line-height: 1;
       width: 46px;
       height: 46px;
@@ -228,12 +243,24 @@
       transition: border-color 160ms ease, opacity 160ms ease;
     }
     .icon-btn:hover { border-color: rgba(255, 255, 255, 0.24); }
-    .icon-btn.is-muted { opacity: 0.5; }
+    /* Iconos SVG (sin emojis): se alterna on/off con la clase .is-muted */
+    .icon-btn .ico { width: 22px; height: 22px; display: block; }
+    .icon-btn .ico-off { display: none; }
+    .icon-btn.is-muted { color: var(--ink-dim); }
+    .icon-btn.is-muted .ico-on { display: none; }
+    .icon-btn.is-muted .ico-off { display: block; }
 
     .hint {
       text-align: center;
       color: var(--ink-dim);
       font-size: 0.78rem;
+      flex: 0 0 auto;
+    }
+
+    /* En viewports bajos se ocultan textos auxiliares para que todo quepa. */
+    @media (max-height: 660px) {
+      .subtitle, .hint { display: none; }
+      .app { gap: 8px; }
     }
   </style>
 </head>
@@ -261,21 +288,47 @@
       </div>
     </section>
 
-    <div class="stage">
-      <canvas id="game" role="img" aria-label="Cosmic merge play area — drop bodies and merge equal ones"></canvas>
-      <div class="overlay" id="overlay" hidden role="dialog" aria-label="Game over">
-        <div class="over-card">
-          <div class="over-emoji" aria-hidden="true">🌌</div>
-          <h2>Game over</h2>
-          <p class="over-sub">Final score</p>
-          <div class="over-score" id="finalScore">0</div>
-          <button class="btn btn-primary" id="playAgain">Play again</button>
+    <div class="stage-wrap">
+      <div class="stage" id="stage">
+        <canvas id="game" role="img" aria-label="Cosmic merge play area — drop bodies and merge equal ones"></canvas>
+        <div class="overlay" id="overlay" hidden role="dialog" aria-label="Game over">
+          <div class="over-card">
+            <!-- Marca de galaxia (SVG inline, sin emojis) -->
+            <svg class="over-mark" viewBox="0 0 64 64" aria-hidden="true">
+              <defs>
+                <radialGradient id="galaxyGrad" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stop-color="#22d3ee" />
+                  <stop offset="55%" stop-color="#7c5cff" />
+                  <stop offset="100%" stop-color="#7c5cff" stop-opacity="0" />
+                </radialGradient>
+              </defs>
+              <circle cx="32" cy="32" r="22" fill="url(#galaxyGrad)" opacity="0.9" />
+              <path d="M32 12a20 20 0 1 1-20 20" fill="none" stroke="#eef2ff" stroke-width="2.4" stroke-linecap="round" opacity="0.85" />
+              <circle cx="32" cy="32" r="4" fill="#eef2ff" />
+            </svg>
+            <h2>Game over</h2>
+            <p class="over-sub">Final score</p>
+            <div class="over-score" id="finalScore">0</div>
+            <button class="btn btn-primary" id="playAgain">Play again</button>
+          </div>
         </div>
       </div>
     </div>
 
     <section class="controls">
-      <button class="icon-btn" id="soundToggle" aria-label="Toggle sound" title="Sound">🔊</button>
+      <button class="icon-btn" id="soundToggle" aria-label="Toggle sound" aria-pressed="false" title="Sound">
+        <!-- Sonido activo: altavoz con ondas (SVG inline, sin emojis) -->
+        <svg class="ico ico-on" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3 9v6h4l5 4V5L7 9H3z" fill="currentColor" />
+          <path d="M15.5 8.5a5 5 0 0 1 0 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+          <path d="M18 6a8 8 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        </svg>
+        <!-- Sonido silenciado: altavoz con cruz -->
+        <svg class="ico ico-off" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3 9v6h4l5 4V5L7 9H3z" fill="currentColor" />
+          <path d="M16 9l5 6M21 9l-5 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        </svg>
+      </button>
       <button class="btn btn-ghost" id="restart">Restart</button>
     </section>
 
@@ -377,6 +430,8 @@
     /* ===== Referencias del DOM ===== */
     const canvas      = document.getElementById("game");
     const ctx         = canvas.getContext("2d");
+    const stageEl     = document.getElementById("stage");
+    const stageWrap   = stageEl.parentElement;
     const nextCanvas  = document.getElementById("nextCanvas");
     const nctx        = nextCanvas.getContext("2d");
     const scoreEl     = document.getElementById("score");
@@ -1114,10 +1169,35 @@
     playAgainBtn.addEventListener("click", reset);
     soundBtn.addEventListener("click", function () {
       state.muted = !state.muted;
-      soundBtn.textContent = state.muted ? "🔇" : "🔊";
-      soundBtn.classList.toggle("is-muted", state.muted);
+      syncSoundBtn();
       try { localStorage.setItem(CONFIG.muteKey, state.muted ? "1" : "0"); } catch (e) {}
     });
+
+    // Refleja el estado de mute en el botón (clase para alternar SVG + aria).
+    function syncSoundBtn() {
+      soundBtn.classList.toggle("is-muted", state.muted);
+      soundBtn.setAttribute("aria-pressed", state.muted ? "true" : "false");
+    }
+
+    /* ===== Ajuste de la zona de juego al alto disponible =====
+     * Mide el hueco libre de .stage-wrap y fija el tamaño de .stage en px
+     * conservando la proporción del mundo (W/H). El canvas interno mantiene
+     * su resolución (W×H·DPR) y la física/render siguen en unidades de mundo;
+     * el CSS solo escala el bitmap, así que nada de la lógica cambia. */
+    function fitStage() {
+      const availW = stageWrap.clientWidth;
+      const availH = stageWrap.clientHeight;
+      if (availW <= 0 || availH <= 0) return;
+      const ratio = W / H; // proporción vertical fija (360/560)
+      let h = availH;
+      let w = h * ratio;
+      if (w > availW) { w = availW; h = w / ratio; }
+      stageEl.style.width = w + "px";
+      stageEl.style.height = h + "px";
+    }
+    window.addEventListener("resize", fitStage);
+    window.addEventListener("orientationchange", fitStage);
+    if (window.visualViewport) window.visualViewport.addEventListener("resize", fitStage);
 
     /* ===== Inicialización ===== */
     (function init() {
@@ -1139,8 +1219,12 @@
         state.muted = localStorage.getItem(CONFIG.muteKey) === "1";
       } catch (e) {}
       bestEl.textContent = state.best;
-      soundBtn.textContent = state.muted ? "🔇" : "🔊";
-      soundBtn.classList.toggle("is-muted", state.muted);
+      syncSoundBtn();
+
+      fitStage();
+      // Reajusta tras el primer layout y al cargar la fuente (cambia el alto del título).
+      requestAnimationFrame(fitStage);
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitStage);
 
       reset();
       requestAnimationFrame(loop);
