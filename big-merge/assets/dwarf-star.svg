@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Big Merge · nivel 7: enana estelar -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="Dwarf star">
+  <defs>
+    <radialGradient id="dw-glow" cx="64" cy="64" r="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0.42" stop-color="#fff6c8" stop-opacity="0.85"/>
+      <stop offset="0.7" stop-color="#ffd23d" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#ffb300" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="dw-body" cx="48" cy="46" r="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.5" stop-color="#fff0a8"/>
+      <stop offset="1" stop-color="#ffcf45"/>
+    </radialGradient>
+  </defs>
+  <circle cx="64" cy="64" r="64" fill="url(#dw-glow)"/>
+  <!-- Rayos -->
+  <g stroke="#fff2b8" stroke-width="5" stroke-linecap="round" opacity="0.85">
+    <line x1="64" y1="6" x2="64" y2="22"/>
+    <line x1="64" y1="106" x2="64" y2="122"/>
+    <line x1="6" y1="64" x2="22" y2="64"/>
+    <line x1="106" y1="64" x2="122" y2="64"/>
+    <line x1="22" y1="22" x2="34" y2="34"/>
+    <line x1="94" y1="94" x2="106" y2="106"/>
+    <line x1="106" y1="22" x2="94" y2="34"/>
+    <line x1="34" y1="94" x2="22" y2="106"/>
+  </g>
+  <circle cx="64" cy="64" r="48" fill="url(#dw-body)"/>
+  <circle cx="52" cy="52" r="16" fill="#ffffff" opacity="0.55"/>
+</svg>

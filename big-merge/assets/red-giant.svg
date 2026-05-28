@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Big Merge · nivel 8: gigante roja -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="Red giant">
+  <defs>
+    <radialGradient id="rg-glow" cx="64" cy="64" r="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0.72" stop-color="#ff7a3d" stop-opacity="0.7"/>
+      <stop offset="0.88" stop-color="#ff3d3d" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#c01313" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="rg-body" cx="46" cy="44" r="78" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffb56b"/>
+      <stop offset="0.55" stop-color="#ff5d3d"/>
+      <stop offset="1" stop-color="#c11f23"/>
+    </radialGradient>
+    <clipPath id="rg-clip"><circle cx="64" cy="64" r="56"/></clipPath>
+  </defs>
+  <circle cx="64" cy="64" r="64" fill="url(#rg-glow)"/>
+  <circle cx="64" cy="64" r="56" fill="url(#rg-body)"/>
+  <g clip-path="url(#rg-clip)" opacity="0.55">
+    <!-- Manchas / convección -->
+    <ellipse cx="42" cy="54" rx="16" ry="11" fill="#c11f23"/>
+    <ellipse cx="84" cy="44" rx="11" ry="8" fill="#d8392a"/>
+    <ellipse cx="82" cy="90" rx="15" ry="10" fill="#c11f23"/>
+    <ellipse cx="46" cy="94" rx="9" ry="6" fill="#d8392a"/>
+    <ellipse cx="60" cy="68" rx="11" ry="7" fill="#ff7a3d"/>
+  </g>
+  <circle cx="52" cy="50" r="18" fill="#ffd9a8" opacity="0.4"/>
+</svg>

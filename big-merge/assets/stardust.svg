@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Big Merge · nivel 1: polvo estelar -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="Stardust">
+  <defs>
+    <radialGradient id="sd-glow" cx="64" cy="64" r="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#dfe6ff" stop-opacity="0.6"/>
+      <stop offset="0.45" stop-color="#9aa6ff" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#7c5cff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="sd-core" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#cdddff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle cx="64" cy="64" r="64" fill="url(#sd-glow)"/>
+  <!-- Chispa central grande -->
+  <path d="M64 14 L72 56 L114 64 L72 72 L64 114 L56 72 L14 64 L56 56 Z" fill="#ffffff"/>
+  <circle cx="64" cy="64" r="26" fill="url(#sd-core)"/>
+  <!-- Chispas secundarias -->
+  <path d="M32 22 L36.5 33.5 L48 38 L36.5 42.5 L32 54 L27.5 42.5 L16 38 L27.5 33.5 Z" fill="#dbe6ff"/>
+  <path d="M98 78 L101.9 88.1 L112 92 L101.9 95.9 L98 106 L94.1 95.9 L84 92 L94.1 88.1 Z" fill="#dbe6ff"/>
+  <circle cx="104" cy="40" r="3" fill="#ffffff"/>
+  <circle cx="24" cy="96" r="2.6" fill="#cde0ff"/>
+  <circle cx="86" cy="22" r="2" fill="#cde0ff"/>
+  <circle cx="40" cy="104" r="2" fill="#cde0ff"/>
+</svg>

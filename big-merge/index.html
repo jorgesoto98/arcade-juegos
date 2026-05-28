@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Big Merge · Cosmic merge</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ===== Tokens visuales compartidos del arcade ===== */
+    :root {
+      --bg-0: #0b1020;
+      --ink: #eef2ff;
+      --ink-dim: #9aa6cc;
+      --accent: #7c5cff;
+      --accent-2: #22d3ee;
+      --radius: 18px;
+      --shadow: 0 24px 60px rgba(4, 7, 20, 0.6);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+
+    body {
+      font-family: "Sora", system-ui, -apple-system, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(140% 90% at 50% -10%, rgba(124, 92, 255, 0.16), transparent 55%),
+        radial-gradient(120% 80% at 50% 120%, rgba(34, 211, 238, 0.10), transparent 55%),
+        var(--bg-0);
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: 16px 14px 24px;
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 14px;
+    }
+
+    /* ===== Back-link al hub ===== */
+    .back-link {
+      align-self: flex-start;
+      text-decoration: none;
+      color: var(--ink-dim);
+      font-weight: 600;
+      font-size: 0.86rem;
+      padding: 7px 12px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: color 160ms ease, border-color 160ms ease, transform 120ms ease;
+    }
+    .back-link:hover { color: var(--ink); border-color: rgba(255, 255, 255, 0.24); }
+    .back-link:active { transform: translateY(1px); }
+
+    /* ===== Cabecera ===== */
+    .head { text-align: center; }
+    .title {
+      font-size: clamp(1.8rem, 7vw, 2.4rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+    .title span { color: var(--accent-2); margin-left: 0.18em; }
+    .subtitle { margin-top: 6px; color: var(--ink-dim); font-size: 0.86rem; }
+
+    /* ===== HUD: score | next | best ===== */
+    .hud {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: stretch;
+      gap: 10px;
+    }
+    .stat {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 10px 8px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .stat-label {
+      font-size: 0.66rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--ink-dim);
+    }
+    .stat-value {
+      margin-top: 4px;
+      font-family: "Space Grotesk", monospace;
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+    .stat-value.bump { animation: bump 220ms ease; }
+    @keyframes bump {
+      0% { transform: scale(1); }
+      45% { transform: scale(1.22); color: var(--accent-2); }
+      100% { transform: scale(1); }
+    }
+
+    .next {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      padding: 6px 14px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+    }
+    .next-label {
+      font-size: 0.66rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--ink-dim);
+    }
+    #nextCanvas { width: 56px; height: 56px; display: block; }
+
+    /* ===== Tablero / contenedor (las "paredes" son el borde) ===== */
+    .stage {
+      position: relative;
+      width: min(92vw, calc(78vh * 0.643), 400px);
+      aspect-ratio: 360 / 560;
+      margin: 0 auto;
+      border-radius: var(--radius);
+      border: 2px solid rgba(255, 255, 255, 0.10);
+      overflow: hidden;
+      box-shadow:
+        var(--shadow),
+        inset 0 0 60px rgba(124, 92, 255, 0.10);
+      background:
+        radial-gradient(120% 70% at 50% -10%, rgba(124, 92, 255, 0.20), transparent 60%),
+        radial-gradient(100% 60% at 50% 115%, rgba(34, 211, 238, 0.12), transparent 60%),
+        #070b18;
+    }
+    #game {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      touch-action: none; /* evita scroll/gestos sobre el canvas */
+    }
+
+    /* ===== Overlay de game over ===== */
+    .overlay[hidden] { display: none; }
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: rgba(7, 10, 24, 0.62);
+      backdrop-filter: blur(8px);
+      animation: fade 280ms ease;
+      padding: 18px;
+    }
+    @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+    .over-card {
+      text-align: center;
+      padding: 26px 24px;
+      background: #141b34;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+    .over-emoji { font-size: 2.6rem; filter: drop-shadow(0 4px 12px rgba(124, 92, 255, 0.6)); }
+    .over-card h2 { margin: 8px 0 4px; font-size: 1.5rem; color: var(--accent-2); }
+    .over-card .over-sub { color: var(--ink-dim); font-size: 0.86rem; margin-bottom: 4px; }
+    .over-score {
+      font-family: "Space Grotesk", monospace;
+      font-size: 2.4rem;
+      font-weight: 700;
+      margin: 2px 0 18px;
+    }
+
+    /* ===== Controles ===== */
+    .controls { display: flex; align-items: center; gap: 10px; }
+    .controls .btn { flex: 1; }
+
+    .btn {
+      font-family: "Sora", sans-serif;
+      font-weight: 700;
+      font-size: 0.92rem;
+      padding: 12px 18px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      color: var(--ink);
+      transition: transform 120ms ease, filter 160ms ease, border-color 160ms ease;
+    }
+    .btn:active { transform: translateY(1px) scale(0.98); }
+    .btn-primary {
+      color: #fff;
+      background: var(--accent);
+      box-shadow: 0 8px 20px rgba(124, 92, 255, 0.35);
+    }
+    .btn-primary:hover { filter: brightness(1.07); }
+    .btn-ghost {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .btn-ghost:hover { border-color: rgba(255, 255, 255, 0.28); }
+
+    .icon-btn {
+      font-size: 1.15rem;
+      line-height: 1;
+      width: 46px;
+      height: 46px;
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      cursor: pointer;
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: border-color 160ms ease, opacity 160ms ease;
+    }
+    .icon-btn:hover { border-color: rgba(255, 255, 255, 0.24); }
+    .icon-btn.is-muted { opacity: 0.5; }
+
+    .hint {
+      text-align: center;
+      color: var(--ink-dim);
+      font-size: 0.78rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <a class="back-link" href="../index.html" aria-label="Back to Arcade">← Arcade</a>
+
+    <header class="head">
+      <h1 class="title" id="title"></h1>
+      <p class="subtitle">Drop &amp; merge cosmic bodies — grow from stardust to a galaxy</p>
+    </header>
+
+    <section class="hud">
+      <div class="stat">
+        <span class="stat-label">Score</span>
+        <span class="stat-value" id="score">0</span>
+      </div>
+      <div class="next">
+        <span class="next-label">Next</span>
+        <canvas id="nextCanvas" aria-label="Next body"></canvas>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Best</span>
+        <span class="stat-value" id="best">0</span>
+      </div>
+    </section>
+
+    <div class="stage">
+      <canvas id="game" role="img" aria-label="Cosmic merge play area — drop bodies and merge equal ones"></canvas>
+      <div class="overlay" id="overlay" hidden role="dialog" aria-label="Game over">
+        <div class="over-card">
+          <div class="over-emoji" aria-hidden="true">🌌</div>
+          <h2>Game over</h2>
+          <p class="over-sub">Final score</p>
+          <div class="over-score" id="finalScore">0</div>
+          <button class="btn btn-primary" id="playAgain">Play again</button>
+        </div>
+      </div>
+    </div>
+
+    <section class="controls">
+      <button class="icon-btn" id="soundToggle" aria-label="Toggle sound" title="Sound">🔊</button>
+      <button class="btn btn-ghost" id="restart">Restart</button>
+    </section>
+
+    <p class="hint" aria-hidden="true">Move to aim · tap / click to drop · merge two equal bodies</p>
+  </main>
+
+  <!-- Motor de física 2D (solo simulación; el render es propio en Canvas) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+  <script>
+  (function () {
+    "use strict";
+
+    /* =================================================================
+     * CONFIG — parámetros ajustables agrupados.
+     * Para regular la DIFICULTAD, los más útiles son:
+     *   - gravity            : más alto = caída más rápida y agresiva.
+     *   - world.width/height : un contenedor más grande da más margen.
+     *   - levels[].radius    : radios menores caben más cuerpos (más fácil).
+     *   - droppableLevels    : cuántos niveles iniciales pueden aparecer.
+     *   - limitLineY         : línea límite; más abajo (mayor Y) = más difícil.
+     *   - gameOverDelay      : segundos de gracia sobre la línea.
+     *   - cooldown           : tiempo mínimo entre lanzamientos.
+     *   - solarWind          : ráfaga horizontal periódica (interval/force).
+     *   - bigBang            : clímax al formar la galaxia (radio/bonus/flash).
+     *   - aim                : apariencia de la línea de mira.
+     * ================================================================= */
+    const CONFIG = {
+      title: "Big Merge", // El usuario evalúa renombrarlo a "Big Bang": cambiar aquí.
+      storageKey: "arcade-bigmerge-best",
+      muteKey: "arcade-bigmerge-muted",
+
+      // Mundo lógico. El canvas escala por CSS manteniendo esta proporción.
+      world: { width: 360, height: 560 },
+      wallThickness: 60,   // grosor de paredes/suelo estáticos (fuera del área)
+      dropLineY: 70,       // altura donde flota el cuerpo "actual" a soltar
+      limitLineY: 120,     // línea límite superior para el game over
+
+      // Física (Matter.js)
+      gravity: 1,          // engine.gravity.y
+      restitution: 0.08,   // rebote bajo
+      friction: 0.25,      // fricción moderada
+      frictionStatic: 0.5,
+      density: 0.0014,
+
+      // Reglas del juego
+      cooldown: 450,       // ms entre lanzamientos
+      droppableLevels: 5,  // solo los primeros N niveles salen como cuerpos NUEVOS
+      dropWeights: [0.34, 0.27, 0.20, 0.12, 0.07], // ponderado hacia los pequeños
+      settleSpeed: 2,      // velocidad bajo la cual un cuerpo se considera asentado
+      gameOverDelay: 2000, // ms continuos sobre la línea límite => game over
+      galaxyBonus: 500,    // bonus al FORMAR una galaxia (nivel máximo)
+      galaxyMergeBonus: 2000, // bonus al fusionar DOS galaxias (despeja el tablero)
+
+      // Línea de mira: guía/trayectoria que muestra dónde caerá el cuerpo actual.
+      aim: {
+        lineAlpha: 0.30,    // opacidad de la línea-guía vertical
+        dash: [5, 9],       // patrón de guiones de la guía
+        reticleAlpha: 0.55, // opacidad del marcador de aterrizaje
+      },
+
+      // Viento solar: ráfaga horizontal periódica sobre TODOS los cuerpos.
+      solarWind: {
+        interval: 30000,    // ms entre ráfagas
+        warning: 1800,      // ms de aviso visual previo a la ráfaga
+        force: 0.0005,      // fuerza horizontal por unidad de masa (Body.applyForce)
+        gustDuration: 650,  // ms de empuje (se aplica en cada paso de física)
+      },
+
+      // Big Bang: clímax al formar una GALAXIA (nivel máximo).
+      bigBang: {
+        clearRadius: 130,   // radio (mundo) de limpieza alrededor de la galaxia
+        maxCleared: 6,      // máx. de cuerpos despejados (limpieza PARCIAL)
+        bonus: 400,         // bonus base del Big Bang
+        bonusPerBody: 60,   // bonus por cada cuerpo despejado
+        flash: 0.85,        // intensidad del flash de pantalla (0..1)
+        shake: 18,          // intensidad del sacudón del Big Bang
+      },
+
+      // 11 niveles, de menor a mayor. radius en unidades del mundo.
+      levels: [
+        { name: "Stardust",     radius: 14,  color: "#cfd8ff", sprite: "assets/stardust.svg" },
+        { name: "Asteroid",     radius: 19,  color: "#9aa0b5", sprite: "assets/asteroid.svg" },
+        { name: "Meteorite",    radius: 25,  color: "#e0843c", sprite: "assets/meteorite.svg" },
+        { name: "Moon",         radius: 32,  color: "#d2d8ea", sprite: "assets/moon.svg" },
+        { name: "Rocky planet", radius: 41,  color: "#c66a45", sprite: "assets/rocky-planet.svg" },
+        { name: "Gas giant",    radius: 52,  color: "#e3b16b", sprite: "assets/gas-giant.svg" },
+        { name: "Dwarf star",   radius: 64,  color: "#ffd95e", sprite: "assets/dwarf-star.svg" },
+        { name: "Red giant",    radius: 78,  color: "#ff6f61", sprite: "assets/red-giant.svg" },
+        { name: "Supernova",    radius: 92,  color: "#a07bff", sprite: "assets/supernova.svg" },
+        { name: "Black hole",   radius: 108, color: "#6b4fb0", sprite: "assets/black-hole.svg" },
+        { name: "Galaxy",       radius: 126, color: "#34e0ff", sprite: "assets/galaxy.svg" },
+      ],
+    };
+
+    const W = CONFIG.world.width;
+    const H = CONFIG.world.height;
+    const MAX_LEVEL = CONFIG.levels.length - 1;
+
+    /* ===== Referencias del DOM ===== */
+    const canvas      = document.getElementById("game");
+    const ctx         = canvas.getContext("2d");
+    const nextCanvas  = document.getElementById("nextCanvas");
+    const nctx        = nextCanvas.getContext("2d");
+    const scoreEl     = document.getElementById("score");
+    const bestEl      = document.getElementById("best");
+    const finalEl     = document.getElementById("finalScore");
+    const overlay     = document.getElementById("overlay");
+    const restartBtn  = document.getElementById("restart");
+    const playAgainBtn= document.getElementById("playAgain");
+    const soundBtn    = document.getElementById("soundToggle");
+    const titleEl     = document.getElementById("title");
+
+    /* ===== Estado central del juego ===== */
+    const state = {
+      playing: false,
+      score: 0,
+      best: 0,
+      current: 0,   // nivel del cuerpo actual a soltar
+      next: 0,      // nivel del siguiente cuerpo (preview)
+      pointerX: W / 2,
+      lastDrop: 0,
+      dangerTime: 0, // ms acumulados con la pila sobre la línea límite
+      shakeMag: 0,
+      muted: false,
+      // Viento solar y Big Bang
+      windElapsed: 0,    // ms transcurridos hacia la próxima ráfaga
+      windPhase: "idle", // "idle" | "warning"
+      windDir: 1,        // dirección de la próxima ráfaga (-1 izq, +1 der)
+      windGust: null,    // ráfaga activa: { dir, remaining }
+      flash: 0,          // intensidad del flash de pantalla (Big Bang)
+    };
+
+    const particles = []; // ráfaga de partículas en cada merge
+    const rings = [];      // anillos de flash que se expanden
+
+    /* ===== Sprites (los crea el "designer"; con fallback a círculos) ===== */
+    const images = CONFIG.levels.map(function (lvl) {
+      const img = new Image();
+      img.onload = function () { renderNextPreview(); };
+      img.onerror = function () { img.failed = true; };
+      img.src = lvl.sprite;
+      return img;
+    });
+    // Devuelve true si el sprite cargó y es dibujable; si no, usaremos fallback.
+    function spriteReady(level) {
+      const img = images[level];
+      return img && !img.failed && img.complete && img.naturalWidth > 0;
+    }
+
+    /* ===== Matter.js: motor, mundo y paredes ===== */
+    const { Engine, Bodies, Body, Composite, Events } = Matter;
+    const engine = Engine.create();
+    engine.gravity.y = CONFIG.gravity;
+    const world = engine.world;
+
+    (function buildWalls() {
+      const t = CONFIG.wallThickness;
+      const wallOpts = { isStatic: true, friction: CONFIG.friction, restitution: CONFIG.restitution, label: "wall" };
+      Composite.add(world, [
+        Bodies.rectangle(W / 2, H + t / 2, W + t * 2, t, wallOpts), // suelo
+        Bodies.rectangle(-t / 2, H / 2, t, H * 2, wallOpts),        // pared izquierda
+        Bodies.rectangle(W + t / 2, H / 2, t, H * 2, wallOpts),     // pared derecha
+      ]);
+    })();
+
+    /* ===== Utilidades ===== */
+    const clamp = function (v, a, b) { return Math.max(a, Math.min(b, v)); };
+    function easeOutBack(t) {
+      const c1 = 1.70158, c3 = c1 + 1;
+      return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+    }
+    function hexToRgb(hex) {
+      hex = hex.replace("#", "");
+      if (hex.length === 3) hex = hex.split("").map(function (c) { return c + c; }).join("");
+      const n = parseInt(hex, 16);
+      return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+    }
+    function lighten(hex, amt) {
+      const c = hexToRgb(hex); amt = amt == null ? 0.4 : amt;
+      return "rgb(" + Math.round(c.r + (255 - c.r) * amt) + "," + Math.round(c.g + (255 - c.g) * amt) + "," + Math.round(c.b + (255 - c.b) * amt) + ")";
+    }
+    function darken(hex, amt) {
+      const c = hexToRgb(hex); amt = amt == null ? 0.45 : amt;
+      return "rgb(" + Math.round(c.r * (1 - amt)) + "," + Math.round(c.g * (1 - amt)) + "," + Math.round(c.b * (1 - amt)) + ")";
+    }
+    function rgba(hex, a) {
+      const c = hexToRgb(hex);
+      return "rgba(" + c.r + "," + c.g + "," + c.b + "," + a + ")";
+    }
+
+    /* ===== Audio (WebAudio, opcional, con mute) ===== */
+    let audioCtx = null;
+    function ensureAudio() {
+      if (audioCtx) return;
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { audioCtx = null; }
+    }
+    function playTone(freq, dur, type, vol) {
+      if (state.muted) return;
+      ensureAudio();
+      if (!audioCtx) return;
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = type || "sine";
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(vol == null ? 0.15 : vol, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start();
+      o.stop(audioCtx.currentTime + dur);
+    }
+    function vibrate(pattern) {
+      if (navigator.vibrate) { try { navigator.vibrate(pattern); } catch (e) {} }
+    }
+
+    /* ===== Estrellas de fondo (capa animada en el canvas) ===== */
+    const stars = [];
+    (function buildStars() {
+      const count = 70;
+      for (let i = 0; i < count; i++) {
+        stars.push({
+          x: Math.random() * W,
+          y: Math.random() * H,
+          r: Math.random() * 1.4 + 0.3,
+          phase: Math.random() * Math.PI * 2,
+          speed: Math.random() * 0.0016 + 0.0006,
+          drift: Math.random() * 4 + 1,
+        });
+      }
+    })();
+
+    /* ===== Lienzo: resolución por DPR, render en unidades del mundo ===== */
+    const DPR = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = W * DPR;
+    canvas.height = H * DPR;
+    ctx.scale(DPR, DPR);
+
+    const NSIZE = 56;
+    nextCanvas.width = NSIZE * DPR;
+    nextCanvas.height = NSIZE * DPR;
+    nctx.scale(DPR, DPR);
+
+    /* ===== Creación de cuerpos celestes ===== */
+    function makeBody(x, y, level) {
+      const r = CONFIG.levels[level].radius;
+      const b = Bodies.circle(x, y, r, {
+        restitution: CONFIG.restitution,
+        friction: CONFIG.friction,
+        frictionStatic: CONFIG.frictionStatic,
+        density: CONFIG.density,
+        label: "celestial",
+      });
+      b.celestialLevel = level;
+      b.merging = false;
+      b.spawnAt = performance.now(); // para la animación de aparición (pop)
+      return b;
+    }
+
+    // Elige un nivel inicial ponderado hacia los más pequeños.
+    function pickDroppableLevel() {
+      const w = CONFIG.dropWeights;
+      let r = Math.random(), acc = 0;
+      for (let i = 0; i < CONFIG.droppableLevels; i++) {
+        acc += w[i];
+        if (r <= acc) return i;
+      }
+      return 0;
+    }
+
+    /* ===== Fusión: cola procesada en 'afterUpdate' para seguridad ===== */
+    const mergeQueue = [];
+    Events.on(engine, "collisionStart", function (evt) {
+      const pairs = evt.pairs;
+      for (let i = 0; i < pairs.length; i++) {
+        const a = pairs[i].bodyA, b = pairs[i].bodyB;
+        if (a.label === "celestial" && b.label === "celestial" &&
+            a.celestialLevel === b.celestialLevel &&
+            !a.merging && !b.merging) {
+          a.merging = true; b.merging = true; // evita doble-procesado
+          mergeQueue.push([a, b]);
+        }
+      }
+    });
+    Events.on(engine, "afterUpdate", function () {
+      while (mergeQueue.length) {
+        const pair = mergeQueue.shift();
+        processMerge(pair[0], pair[1]);
+      }
+    });
+
+    function processMerge(a, b) {
+      const level = a.celestialLevel;
+      const mx = (a.position.x + b.position.x) / 2;
+      const my = (a.position.y + b.position.y) / 2;
+      Composite.remove(world, a);
+      Composite.remove(world, b);
+
+      if (level >= MAX_LEVEL) {
+        // Dos galaxias: bonus grande y a despejar el tablero (sin nuevo cuerpo).
+        addScore(CONFIG.galaxyMergeBonus);
+        burst(mx, my, CONFIG.levels[level].color, 40);
+        flashRing(mx, my, CONFIG.levels[level].color, 240);
+        shake(15);
+        vibrate([30, 20, 60]);
+        playTone(520, 0.45, "triangle", 0.2);
+        return;
+      }
+
+      const newLevel = level + 1;
+      addScore((level + 1) * 10);
+
+      const nb = makeBody(mx, my, newLevel);
+      Body.setVelocity(nb, { x: 0, y: -1 }); // pequeño "pop" hacia arriba
+      Composite.add(world, nb);
+
+      const color = CONFIG.levels[newLevel].color;
+      if (newLevel === MAX_LEVEL) {
+        // ¡Se formó una GALAXIA! Bonus de formación + clímax Big Bang.
+        addScore(CONFIG.galaxyBonus);
+        bigBang(nb, mx, my);
+      } else {
+        burst(mx, my, color, 16 + newLevel * 2);
+        flashRing(mx, my, color, CONFIG.levels[newLevel].radius * 2.4);
+        shake(Math.min(2 + newLevel, 10));
+        vibrate(18);
+        playTone(200 + newLevel * 45, 0.12, "triangle", 0.16);
+      }
+    }
+
+    /* ===== Big Bang: clímax al FORMAR una galaxia =====
+     * Dispara un flash, despeja PARCIALMENTE los cuerpos cercanos y otorga un
+     * bonus grande. NO termina la partida: la galaxia recién creada permanece. */
+    function bigBang(galaxyBody, x, y) {
+      const cfg = CONFIG.bigBang;
+      const gColor = CONFIG.levels[MAX_LEVEL].color;
+      state.flash = cfg.flash;
+      shake(cfg.shake);
+      vibrate([20, 30, 50, 30, 90]);
+      flashRing(x, y, "#ffffff", cfg.clearRadius * 1.7);
+      flashRing(x, y, gColor, cfg.clearRadius * 1.25);
+      burst(x, y, "#ffffff", 46);
+      burst(x, y, gColor, 30);
+      playTone(140, 0.6, "sawtooth", 0.2);
+      playTone(420, 0.5, "triangle", 0.16);
+
+      // Reúne candidatos cercanos (excluye la galaxia nueva y los que ya fusionan).
+      const bodies = Composite.allBodies(world);
+      const candidates = [];
+      for (let i = 0; i < bodies.length; i++) {
+        const b = bodies[i];
+        if (b.label !== "celestial" || b === galaxyBody || b.merging) continue;
+        const d = Math.hypot(b.position.x - x, b.position.y - y);
+        if (d <= cfg.clearRadius) candidates.push({ b: b, d: d });
+      }
+      candidates.sort(function (p, q) { return p.d - q.d; }); // los más cercanos primero
+
+      let cleared = 0;
+      for (let i = 0; i < candidates.length && cleared < cfg.maxCleared; i++) {
+        const b = candidates[i].b;
+        b.merging = true; // evita que reentre en la cola de fusión tras quitarlo
+        burst(b.position.x, b.position.y, CONFIG.levels[b.celestialLevel].color, 10);
+        Composite.remove(world, b);
+        cleared++;
+      }
+      addScore(cfg.bonus + cleared * cfg.bonusPerBody);
+    }
+
+    /* ===== Puntaje ===== */
+    function addScore(n) {
+      state.score += n;
+      scoreEl.textContent = state.score;
+      scoreEl.classList.remove("bump");
+      // forzar reflow para reiniciar la animación
+      void scoreEl.offsetWidth;
+      scoreEl.classList.add("bump");
+    }
+
+    /* ===== Soltar el cuerpo actual ===== */
+    function attemptDrop() {
+      const now = performance.now();
+      if (!state.playing) return;
+      if (now - state.lastDrop < CONFIG.cooldown) return;
+
+      const level = state.current;
+      const r = CONFIG.levels[level].radius;
+      const x = clamp(state.pointerX, r, W - r);
+
+      Composite.add(world, makeBody(x, CONFIG.dropLineY, level));
+      state.lastDrop = now;
+      state.current = state.next;
+      state.next = pickDroppableLevel();
+      renderNextPreview();
+      vibrate(8);
+      playTone(150, 0.06, "sine", 0.10);
+    }
+
+    /* ===== Efectos: partículas, anillos, shake ===== */
+    function burst(x, y, color, n) {
+      for (let i = 0; i < n; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const spd = Math.random() * 160 + 40; // unidades/seg
+        particles.push({
+          x: x, y: y,
+          vx: Math.cos(ang) * spd,
+          vy: Math.sin(ang) * spd,
+          life: 1, maxLife: Math.random() * 0.5 + 0.4,
+          size: Math.random() * 3 + 1.5,
+          color: color,
+        });
+      }
+    }
+    function flashRing(x, y, color, maxR) {
+      rings.push({ x: x, y: y, r: 2, maxR: maxR, life: 1, color: color });
+    }
+    function shake(mag) {
+      state.shakeMag = Math.max(state.shakeMag, mag);
+    }
+
+    function updateEffects(dts) { // dts en segundos
+      // partículas
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.life -= dts / p.maxLife;
+        if (p.life <= 0) { particles.splice(i, 1); continue; }
+        p.vy += 240 * dts; // leve gravedad para las chispas
+        p.x += p.vx * dts;
+        p.y += p.vy * dts;
+      }
+      // anillos
+      for (let i = rings.length - 1; i >= 0; i--) {
+        const ring = rings[i];
+        ring.life -= dts / 0.5;
+        if (ring.life <= 0) { rings.splice(i, 1); continue; }
+        ring.r = ring.maxR * (1 - ring.life) + 2;
+      }
+      // shake
+      state.shakeMag *= 0.86;
+      if (state.shakeMag < 0.3) state.shakeMag = 0;
+      // flash (Big Bang): decaimiento independiente del framerate
+      if (state.flash > 0) {
+        state.flash *= Math.exp(-dts * 6);
+        if (state.flash < 0.01) state.flash = 0;
+      }
+    }
+
+    /* ===== Detección de game over ===== */
+    function updateDanger(dtms) {
+      if (!state.playing) return;
+      let breach = false;
+      const bodies = Composite.allBodies(world);
+      for (let i = 0; i < bodies.length; i++) {
+        const b = bodies[i];
+        if (b.label !== "celestial") continue;
+        const top = b.position.y - b.circleRadius;
+        const speed = Math.hypot(b.velocity.x, b.velocity.y);
+        // Solo cuenta un cuerpo ASENTADO cuya cima supera la línea límite.
+        if (top < CONFIG.limitLineY && speed < CONFIG.settleSpeed) {
+          breach = true;
+          break;
+        }
+      }
+      if (breach) {
+        state.dangerTime += dtms;
+        if (state.dangerTime >= CONFIG.gameOverDelay) gameOver();
+      } else {
+        state.dangerTime = 0;
+      }
+    }
+
+    /* ===== Viento solar: ráfaga horizontal periódica =====
+     * No interfiere con el game over: durante la ráfaga los cuerpos se mueven
+     * (speed > settleSpeed), así que el temporizador de peligro simplemente no
+     * acumula; al asentarse de nuevo se evalúa con la regla normal. */
+    function updateWind(dtms) {
+      const cfg = CONFIG.solarWind;
+      state.windElapsed += dtms;
+      // Aviso previo: elige la dirección una sola vez al entrar en la fase.
+      if (state.windPhase === "idle" && state.windElapsed >= cfg.interval - cfg.warning) {
+        state.windPhase = "warning";
+        state.windDir = Math.random() < 0.5 ? -1 : 1;
+        playTone(300, 0.22, "sine", 0.06); // ping sutil de aviso
+      }
+      // Disparo de la ráfaga.
+      if (state.windElapsed >= cfg.interval) {
+        triggerSolarWind();
+        state.windElapsed = 0;
+        state.windPhase = "idle";
+      }
+    }
+
+    function triggerSolarWind() {
+      state.windGust = { dir: state.windDir, remaining: CONFIG.solarWind.gustDuration };
+      shake(6);
+      vibrate([15, 40, 15]);
+      playTone(180, 0.4, "sawtooth", 0.12);
+    }
+
+    // Empuje aplicado en CADA paso de física mientras dura la ráfaga.
+    // Fuerza ∝ masa ⇒ aceleración constante para todos los cuerpos.
+    function applyWindForce() {
+      const dir = state.windGust.dir;
+      const f = CONFIG.solarWind.force;
+      const bodies = Composite.allBodies(world);
+      for (let i = 0; i < bodies.length; i++) {
+        const b = bodies[i];
+        if (b.label !== "celestial") continue;
+        Body.applyForce(b, b.position, { x: dir * f * b.mass, y: 0 });
+      }
+    }
+
+    function gameOver() {
+      if (!state.playing) return;
+      state.playing = false;
+      shake(16);
+      vibrate([40, 30, 80]);
+      if (state.score > state.best) {
+        state.best = state.score;
+        try { localStorage.setItem(CONFIG.storageKey, String(state.best)); } catch (e) {}
+        bestEl.textContent = state.best;
+      }
+      finalEl.textContent = state.score;
+      overlay.hidden = false;
+      playTone(110, 0.5, "sawtooth", 0.18);
+    }
+
+    /* ===== Reinicio ===== */
+    function reset() {
+      const bodies = Composite.allBodies(world);
+      for (let i = 0; i < bodies.length; i++) {
+        if (bodies[i].label === "celestial") Composite.remove(world, bodies[i]);
+      }
+      mergeQueue.length = 0;
+      particles.length = 0;
+      rings.length = 0;
+      state.shakeMag = 0;
+      state.score = 0;
+      scoreEl.textContent = "0";
+      state.dangerTime = 0;
+      state.lastDrop = 0;
+      state.windElapsed = 0;
+      state.windPhase = "idle";
+      state.windGust = null;
+      state.flash = 0;
+      state.current = pickDroppableLevel();
+      state.next = pickDroppableLevel();
+      overlay.hidden = true;
+      state.playing = true;
+      renderNextPreview();
+    }
+
+    /* =================================================================
+     * RENDER — Canvas propio: lee los cuerpos de Matter y los dibuja
+     * con sprite (o fallback con glow), más estrellas, partículas y UI.
+     * ================================================================= */
+    function drawCelestial(c, level, cx, cy, r, angle, alpha) {
+      const lvl = CONFIG.levels[level];
+      c.save();
+      c.globalAlpha = alpha == null ? 1 : alpha;
+      c.translate(cx, cy);
+      // glow del color del nivel
+      c.shadowColor = lvl.color;
+      c.shadowBlur = r * 0.55;
+
+      if (spriteReady(level)) {
+        c.rotate(angle || 0);
+        c.drawImage(images[level], -r, -r, r * 2, r * 2);
+      } else {
+        // Fallback: círculo con degradado radial y borde brillante.
+        const g = c.createRadialGradient(-r * 0.32, -r * 0.32, r * 0.12, 0, 0, r);
+        g.addColorStop(0, lighten(lvl.color, 0.5));
+        g.addColorStop(0.55, lvl.color);
+        g.addColorStop(1, darken(lvl.color, 0.5));
+        c.beginPath();
+        c.arc(0, 0, r, 0, Math.PI * 2);
+        c.fillStyle = g;
+        c.fill();
+        c.shadowBlur = 0;
+        c.lineWidth = Math.max(1, r * 0.05);
+        c.strokeStyle = "rgba(255,255,255,0.28)";
+        c.stroke();
+      }
+      c.restore();
+    }
+
+    function drawStars(now) {
+      ctx.save();
+      for (let i = 0; i < stars.length; i++) {
+        const s = stars[i];
+        // deriva lenta hacia abajo con wrap
+        s.y += s.drift * 0.004;
+        if (s.y > H) { s.y = 0; s.x = Math.random() * W; }
+        const tw = 0.35 + 0.45 * (0.5 + 0.5 * Math.sin(now * s.speed + s.phase));
+        ctx.globalAlpha = tw;
+        ctx.fillStyle = "#dce3ff";
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawLimitLine() {
+      const danger = state.dangerTime > 0;
+      const t = performance.now() / 200;
+      const pulse = danger ? 0.4 + 0.4 * (0.5 + 0.5 * Math.sin(t)) : 0.22;
+      ctx.save();
+      ctx.setLineDash([6, 8]);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = danger ? rgba("#ff6f61", pulse) : rgba("#22d3ee", pulse);
+      ctx.beginPath();
+      ctx.moveTo(6, CONFIG.limitLineY);
+      ctx.lineTo(W - 6, CONFIG.limitLineY);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    /* ===== Línea de mira: predice dónde se posará el cuerpo actual =====
+     * Recorre la columna bajo X y calcula el contacto con el cuerpo más alto
+     * (geometría de círculos); si no hay nada, cae al suelo. */
+    function predictLandingY(x, r) {
+      let landY = H - r; // por defecto, el suelo
+      const bodies = Composite.allBodies(world);
+      for (let i = 0; i < bodies.length; i++) {
+        const b = bodies[i];
+        if (b.label !== "celestial") continue;
+        const dx = Math.abs(b.position.x - x);
+        const sum = b.circleRadius + r;
+        if (dx < sum) {
+          const dy = Math.sqrt(Math.max(0, sum * sum - dx * dx));
+          const candidate = b.position.y - dy; // centro del cuerpo al tocar
+          if (candidate < landY) landY = candidate;
+        }
+      }
+      return clamp(landY, CONFIG.dropLineY + r, H - r);
+    }
+
+    function drawHeld(now) {
+      const lvl = state.current;
+      const r = CONFIG.levels[lvl].radius;
+      const x = clamp(state.pointerX, r, W - r);
+      const color = CONFIG.levels[lvl].color;
+      const aim = CONFIG.aim;
+      const topY = CONFIG.dropLineY + r;
+      const landY = predictLandingY(x, r);
+
+      ctx.save();
+      // Trayectoria: línea vertical con degradado que se desvanece hacia abajo.
+      const grad = ctx.createLinearGradient(x, topY, x, landY);
+      grad.addColorStop(0, rgba(color, aim.lineAlpha));
+      grad.addColorStop(1, rgba(color, aim.lineAlpha * 0.18));
+      ctx.strokeStyle = grad;
+      ctx.setLineDash(aim.dash);
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x, topY);
+      ctx.lineTo(x, landY);
+      ctx.stroke();
+
+      // Marcador de aterrizaje: contorno del tamaño del cuerpo + cruz central.
+      const pulse = 0.65 + 0.35 * Math.sin(now / 220);
+      ctx.setLineDash([]);
+      ctx.globalAlpha = aim.reticleAlpha * pulse;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(x, landY, r, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x - 5, landY); ctx.lineTo(x + 5, landY);
+      ctx.moveTo(x, landY - 5); ctx.lineTo(x, landY + 5);
+      ctx.stroke();
+      ctx.restore();
+
+      const cooling = (now - state.lastDrop) < CONFIG.cooldown;
+      const pulse2 = 1 + Math.sin(now / 200) * 0.03;
+      drawCelestial(ctx, lvl, x, CONFIG.dropLineY, r * pulse2, 0, cooling ? 0.45 : 1);
+    }
+
+    function drawBodies(now) {
+      const bodies = Composite.allBodies(world);
+      for (let i = 0; i < bodies.length; i++) {
+        const b = bodies[i];
+        if (b.label !== "celestial") continue;
+        const r = b.circleRadius;
+        const t = clamp((now - (b.spawnAt || 0)) / 180, 0, 1);
+        const scale = easeOutBack(t); // pop al aparecer
+        drawCelestial(ctx, b.celestialLevel, b.position.x, b.position.y, r * scale, b.angle, 1);
+      }
+    }
+
+    function drawParticles() {
+      ctx.save();
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        ctx.globalAlpha = Math.max(0, p.life);
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      for (let i = 0; i < rings.length; i++) {
+        const ring = rings[i];
+        ctx.globalAlpha = Math.max(0, ring.life) * 0.6;
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = ring.color;
+        ctx.beginPath();
+        ctx.arc(ring.x, ring.y, ring.r, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    /* ===== Viento solar: aviso previo + streaks de la ráfaga ===== */
+    function drawWind(now) {
+      const gusting = !!(state.windGust && state.windGust.remaining > 0);
+      const warning = state.windPhase === "warning";
+      if (!warning && !gusting) return;
+      const dir = state.windDir;
+      const fromLeftEdge = dir > 0; // viento hacia la derecha entra por la izquierda
+      ctx.save();
+
+      // Glow del borde de origen (más intenso durante la ráfaga).
+      const intensity = gusting ? 0.5 : (0.18 + 0.3 * (0.5 + 0.5 * Math.sin(now / 90)));
+      const bandW = 70;
+      const ox = fromLeftEdge ? 0 : W - bandW;
+      const grad = ctx.createLinearGradient(
+        fromLeftEdge ? 0 : W, 0, fromLeftEdge ? bandW : W - bandW, 0);
+      grad.addColorStop(0, rgba("#22d3ee", intensity));
+      grad.addColorStop(1, rgba("#22d3ee", 0));
+      ctx.fillStyle = grad;
+      ctx.fillRect(ox, 0, bandW, H);
+
+      // Streaks animados que recorren el ancho en la dirección del viento.
+      ctx.strokeStyle = rgba("#7c5cff", gusting ? 0.6 : 0.4);
+      ctx.lineWidth = gusting ? 3 : 2;
+      ctx.lineCap = "round";
+      const speed = gusting ? 0.42 : 0.16;
+      const rows = 7;
+      const len = gusting ? 34 : 20;
+      const span = W + len * 2;
+      for (let i = 0; i < rows; i++) {
+        const y = (i + 0.5) / rows * H;
+        const t = ((now * speed * 0.1) + i * 57) % span;
+        const cx = fromLeftEdge ? t - len : W - t + len;
+        ctx.beginPath();
+        ctx.moveTo(cx, y);
+        ctx.lineTo(cx + dir * len, y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // Flash de pantalla (clímax del Big Bang). Se dibuja por encima de todo.
+    function drawFlash() {
+      if (state.flash <= 0.01) return;
+      ctx.save();
+      ctx.globalAlpha = clamp(state.flash, 0, 1);
+      ctx.fillStyle = "#eaf6ff";
+      ctx.fillRect(0, 0, W, H);
+      ctx.restore();
+    }
+
+    function render(now) {
+      ctx.clearRect(0, 0, W, H); // transparente: deja ver el fondo CSS de la stage
+      const sx = (Math.random() * 2 - 1) * state.shakeMag;
+      const sy = (Math.random() * 2 - 1) * state.shakeMag;
+      ctx.save();
+      ctx.translate(sx, sy);
+      drawStars(now);
+      drawLimitLine();
+      drawBodies(now);
+      if (state.playing) drawHeld(now);
+      drawWind(now);
+      drawParticles();
+      ctx.restore();
+      drawFlash(); // por encima de todo y sin verse afectado por el shake
+    }
+
+    function renderNextPreview() {
+      nctx.clearRect(0, 0, NSIZE, NSIZE);
+      drawCelestial(nctx, state.next, NSIZE / 2, NSIZE / 2, NSIZE * 0.34, 0, 1);
+    }
+
+    /* ===== Bucle principal: física a paso fijo + render por frame ===== */
+    const STEP = 1000 / 60;
+    let acc = 0;
+    let lastTime = performance.now();
+    function loop(now) {
+      let dt = now - lastTime;
+      lastTime = now;
+      if (dt > 250) dt = 250; // evita saltos tras pestaña inactiva
+
+      if (state.playing) {
+        acc += dt;
+        let steps = 0;
+        while (acc >= STEP && steps < 5) {
+          // Empuje del viento solar, aplicado en cada paso mientras dure.
+          if (state.windGust && state.windGust.remaining > 0) {
+            applyWindForce();
+            state.windGust.remaining -= STEP;
+            if (state.windGust.remaining <= 0) state.windGust = null;
+          }
+          Engine.update(engine, STEP);
+          acc -= STEP;
+          steps++;
+        }
+        if (acc > STEP) acc = 0; // descarta exceso para no acumular retraso
+        updateDanger(dt);
+        updateWind(dt);
+      }
+      updateEffects(dt / 1000);
+      render(now);
+      requestAnimationFrame(loop);
+    }
+
+    /* ===== Entrada: puntero (mouse + táctil unificados) ===== */
+    function pointerToWorld(clientX) {
+      const rect = canvas.getBoundingClientRect();
+      return (clientX - rect.left) / rect.width * W;
+    }
+    canvas.addEventListener("pointermove", function (e) {
+      state.pointerX = pointerToWorld(e.clientX);
+    });
+    canvas.addEventListener("pointerdown", function (e) {
+      state.pointerX = pointerToWorld(e.clientX);
+      ensureAudio();
+    });
+    canvas.addEventListener("pointerup", function (e) {
+      state.pointerX = pointerToWorld(e.clientX);
+      attemptDrop();
+    });
+    // Refuerza el bloqueo de scroll en táctil (además de touch-action: none).
+    canvas.addEventListener("touchmove", function (e) { e.preventDefault(); }, { passive: false });
+
+    /* ===== Botones ===== */
+    restartBtn.addEventListener("click", reset);
+    playAgainBtn.addEventListener("click", reset);
+    soundBtn.addEventListener("click", function () {
+      state.muted = !state.muted;
+      soundBtn.textContent = state.muted ? "🔇" : "🔊";
+      soundBtn.classList.toggle("is-muted", state.muted);
+      try { localStorage.setItem(CONFIG.muteKey, state.muted ? "1" : "0"); } catch (e) {}
+    });
+
+    /* ===== Inicialización ===== */
+    (function init() {
+      // Título visible desde la constante (renombrar es trivial).
+      const words = CONFIG.title.split(" ");
+      if (words.length > 1) {
+        titleEl.textContent = words[0];
+        const span = document.createElement("span");
+        span.textContent = words.slice(1).join(" ");
+        titleEl.appendChild(span);
+      } else {
+        titleEl.textContent = CONFIG.title;
+      }
+      document.title = CONFIG.title + " · Cosmic merge";
+
+      // Cargar mejor marca y preferencia de sonido.
+      try {
+        state.best = parseInt(localStorage.getItem(CONFIG.storageKey) || "0", 10) || 0;
+        state.muted = localStorage.getItem(CONFIG.muteKey) === "1";
+      } catch (e) {}
+      bestEl.textContent = state.best;
+      soundBtn.textContent = state.muted ? "🔇" : "🔊";
+      soundBtn.classList.toggle("is-muted", state.muted);
+
+      reset();
+      requestAnimationFrame(loop);
+    })();
+  })();
+  </script>
+</body>
+</html>

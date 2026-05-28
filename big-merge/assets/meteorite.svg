@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Big Merge · nivel 3: meteorito -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="Meteorite">
+  <defs>
+    <radialGradient id="met-glow" cx="64" cy="64" r="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0.7" stop-color="#ff8a3d" stop-opacity="0.55"/>
+      <stop offset="0.86" stop-color="#ff5d2e" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#ff5d2e" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="met-body" cx="46" cy="42" r="74" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6b5142"/>
+      <stop offset="0.6" stop-color="#3f2e26"/>
+      <stop offset="1" stop-color="#241814"/>
+    </radialGradient>
+  </defs>
+  <circle cx="64" cy="64" r="64" fill="url(#met-glow)"/>
+  <!-- Núcleo rocoso -->
+  <path d="M62 16 C84 14 102 26 110 46 C116 62 112 84 98 98 C84 112 60 114 42 104 C24 95 16 74 18 54 C20 36 38 18 62 16 Z"
+        fill="url(#met-body)" stroke="#1a1110" stroke-width="2"/>
+  <!-- Grietas incandescentes -->
+  <path d="M38 44 L60 62 L50 82 L78 72 L96 92" fill="none" stroke="#ffb347" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M38 44 L60 62 L50 82 L78 72 L96 92" fill="none" stroke="#fff1c0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="80" cy="48" r="8" fill="#ff8a3d"/>
+  <circle cx="80" cy="48" r="3.5" fill="#fff1c0"/>
+</svg>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Big Merge · nivel 2: asteroide -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="Asteroid">
+  <defs>
+    <radialGradient id="ast-glow" cx="64" cy="64" r="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0.82" stop-color="#9aa6cc" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#9aa6cc" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="ast-body" cx="46" cy="42" r="78" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8b93a6"/>
+      <stop offset="0.6" stop-color="#5b6478"/>
+      <stop offset="1" stop-color="#363c4d"/>
+    </radialGradient>
+  </defs>
+  <circle cx="64" cy="64" r="64" fill="url(#ast-glow)"/>
+  <!-- Roca irregular (~88% del ancho) -->
+  <path d="M60 13 C84 11 106 24 114 46 C120 64 114 88 98 102 C82 116 58 118 40 108 C22 99 12 76 16 54 C20 34 36 15 60 13 Z"
+        fill="url(#ast-body)" stroke="#2a2f3d" stroke-width="2"/>
+  <!-- Cráteres -->
+  <circle cx="52" cy="48" r="15" fill="#454c5e"/>
+  <circle cx="48" cy="44" r="9" fill="#363c4d"/>
+  <circle cx="88" cy="70" r="11" fill="#454c5e"/>
+  <circle cx="85" cy="67" r="6.5" fill="#363c4d"/>
+  <circle cx="62" cy="92" r="8" fill="#454c5e"/>
+  <ellipse cx="36" cy="78" rx="7" ry="5" fill="#454c5e"/>
+  <circle cx="98" cy="46" r="5" fill="#454c5e"/>
+</svg>

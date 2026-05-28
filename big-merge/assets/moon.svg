@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Big Merge · nivel 4: luna -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="Moon">
+  <defs>
+    <radialGradient id="moon-glow" cx="64" cy="64" r="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0.84" stop-color="#dfe6ff" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#aab4dd" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="moon-body" cx="44" cy="40" r="80" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#eef1fa"/>
+      <stop offset="0.6" stop-color="#c3c9da"/>
+      <stop offset="1" stop-color="#8c93a8"/>
+    </radialGradient>
+    <clipPath id="moon-clip"><circle cx="64" cy="64" r="56"/></clipPath>
+  </defs>
+  <circle cx="64" cy="64" r="64" fill="url(#moon-glow)"/>
+  <circle cx="64" cy="64" r="56" fill="url(#moon-body)"/>
+  <g clip-path="url(#moon-clip)">
+    <circle cx="48" cy="44" r="15" fill="#aab1c4"/>
+    <circle cx="48" cy="44" r="11" fill="#bcc2d3"/>
+    <circle cx="90" cy="56" r="9" fill="#aab1c4"/>
+    <circle cx="70" cy="92" r="12" fill="#aab1c4"/>
+    <circle cx="70" cy="92" r="8" fill="#bcc2d3"/>
+    <circle cx="34" cy="84" r="7" fill="#aab1c4"/>
+    <circle cx="96" cy="88" r="5" fill="#aab1c4"/>
+    <circle cx="60" cy="62" r="4" fill="#aab1c4"/>
+    <circle cx="100" cy="40" r="4" fill="#aab1c4"/>
+  </g>
+  <circle cx="64" cy="64" r="56" fill="none" stroke="#ffffff" stroke-opacity="0.25" stroke-width="2"/>
+</svg>

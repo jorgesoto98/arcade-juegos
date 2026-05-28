@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Big Merge · nivel 6: gigante gaseoso -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="Gas giant">
+  <defs>
+    <radialGradient id="gg-glow" cx="64" cy="64" r="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0.82" stop-color="#ffcf8a" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#e0a55c" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="gg-body" cx="44" cy="40" r="78" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f6d9a8"/>
+      <stop offset="0.7" stop-color="#d99c5b"/>
+      <stop offset="1" stop-color="#9c6432"/>
+    </radialGradient>
+    <clipPath id="gg-clip"><circle cx="64" cy="64" r="54"/></clipPath>
+  </defs>
+  <circle cx="64" cy="64" r="64" fill="url(#gg-glow)"/>
+  <!-- Anillo trasero -->
+  <ellipse cx="64" cy="64" rx="62" ry="17" fill="none" stroke="#e7c79a" stroke-width="5" stroke-opacity="0.45" transform="rotate(-18 64 64)"/>
+  <circle cx="64" cy="64" r="54" fill="url(#gg-body)"/>
+  <g clip-path="url(#gg-clip)">
+    <!-- Bandas -->
+    <rect x="8" y="26" width="112" height="12" fill="#c98c4e" opacity="0.7"/>
+    <rect x="8" y="44" width="112" height="9" fill="#b87a3c" opacity="0.7"/>
+    <rect x="8" y="60" width="112" height="13" fill="#e8b878" opacity="0.6"/>
+    <rect x="8" y="80" width="112" height="10" fill="#b87a3c" opacity="0.7"/>
+    <rect x="8" y="96" width="112" height="9" fill="#c98c4e" opacity="0.6"/>
+    <!-- Gran mancha -->
+    <ellipse cx="84" cy="78" rx="14" ry="9" fill="#d35f3a"/>
+    <ellipse cx="84" cy="78" rx="8" ry="4.5" fill="#f0855e"/>
+  </g>
+  <!-- Anillo delantero -->
+  <ellipse cx="64" cy="64" rx="62" ry="17" fill="none" stroke="#f3dcb4" stroke-width="3.5" stroke-opacity="0.85" transform="rotate(-18 64 64)" stroke-dasharray="0 100 120 220"/>
+</svg>

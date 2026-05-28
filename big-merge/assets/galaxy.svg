@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Big Merge · nivel 11: galaxia -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="Galaxy">
+  <defs>
+    <radialGradient id="gx-glow" cx="64" cy="64" r="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0.4" stop-color="#c9b6ff" stop-opacity="0.55"/>
+      <stop offset="0.75" stop-color="#7c5cff" stop-opacity="0.25"/>
+      <stop offset="1" stop-color="#22d3ee" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="gx-disk" cx="64" cy="64" r="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff3c8" stop-opacity="0.9"/>
+      <stop offset="0.35" stop-color="#9a7dff" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#3a2db5" stop-opacity="0.05"/>
+    </radialGradient>
+    <radialGradient id="gx-core" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.5" stop-color="#ffe9a8"/>
+      <stop offset="1" stop-color="#ffb86b" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle cx="64" cy="64" r="64" fill="url(#gx-glow)"/>
+  <!-- Disco galáctico inclinado -->
+  <ellipse cx="64" cy="64" rx="60" ry="42" fill="url(#gx-disk)" transform="rotate(-24 64 64)"/>
+  <!-- Brazos espirales -->
+  <g fill="none" stroke-linecap="round" opacity="0.9">
+    <path d="M64 64 C90 54 108 66 110 90 C111 106 98 118 76 118" stroke="#d8c8ff" stroke-width="8"/>
+    <path d="M64 64 C38 74 20 62 18 38 C17 22 30 10 52 10" stroke="#9ad8ff" stroke-width="8"/>
+    <path d="M64 64 C86 56 102 66 104 86" stroke="#ff9ec4" stroke-width="3.5" opacity="0.8"/>
+    <path d="M64 64 C42 72 26 62 24 42" stroke="#ff9ec4" stroke-width="3.5" opacity="0.8"/>
+  </g>
+  <!-- Núcleo -->
+  <circle cx="64" cy="64" r="26" fill="url(#gx-core)"/>
+  <circle cx="64" cy="64" r="9" fill="#ffffff"/>
+  <!-- Estrellas dispersas -->
+  <g fill="#ffffff">
+    <circle cx="104" cy="36" r="1.8"/>
+    <circle cx="28" cy="96" r="1.8"/>
+    <circle cx="92" cy="106" r="1.6"/>
+    <circle cx="40" cy="24" r="1.6"/>
+    <circle cx="114" cy="76" r="1.4"/>
+    <circle cx="16" cy="56" r="1.4"/>
+  </g>
+</svg>
