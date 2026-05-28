@@ -42,24 +42,36 @@
       <button class="btn btn-ghost btn-undo" id="undo" type="button" aria-label="Undo last move" disabled>↶ Undo (3)</button>
     </div>
 
-    <!-- Tablero: rejilla de fondo + capa de fichas -->
-    <div class="board-wrap">
-      <div class="board" id="board" role="grid" aria-label="2048 board">
-        <div class="grid-bg" id="gridBg" aria-hidden="true"></div>
-        <div class="tile-layer" id="tileLayer"></div>
-      </div>
-      <canvas class="fx" id="fx" aria-hidden="true"></canvas>
-      <canvas class="confetti" id="confetti" aria-hidden="true"></canvas>
+    <!-- Ayuda del modo Black Hole (oculta en Classic) -->
+    <p class="mode-hint" id="modeHint" hidden>
+      <span class="mode-hint-rule">Black Hole — every 5 moves a cell collapses into a black hole and locks</span>
+      <span class="mode-hint-count" id="collapseCount"></span>
+    </p>
 
-      <!-- Overlay reutilizado para victoria y derrota -->
-      <div class="overlay" id="overlay" hidden>
-        <div class="overlay-card">
-          <div class="overlay-emoji" id="ovEmoji">🎉</div>
-          <h2 id="ovTitle">You win!</h2>
-          <p id="ovMsg">You reached 2048</p>
-          <div class="overlay-actions">
-            <button class="btn btn-ghost" id="keepGoing">Keep going</button>
-            <button class="btn btn-primary" id="restart">New game</button>
+    <!-- Escenario: ocupa el alto restante y centra un tablero cuadrado -->
+    <div class="stage">
+      <!-- Tablero: rejilla de fondo + capa de fichas -->
+      <div class="board-wrap">
+        <div class="board" id="board" role="grid" aria-label="2048 board">
+          <div class="grid-bg" id="gridBg" aria-hidden="true"></div>
+          <div class="tile-layer" id="tileLayer"></div>
+        </div>
+        <canvas class="fx" id="fx" aria-hidden="true"></canvas>
+        <canvas class="confetti" id="confetti" aria-hidden="true"></canvas>
+
+        <!-- Aviso breve al colapsar una celda (modo Black Hole) -->
+        <div class="board-toast" id="boardToast" role="status" aria-live="polite"></div>
+
+        <!-- Overlay reutilizado para victoria y derrota -->
+        <div class="overlay" id="overlay" hidden>
+          <div class="overlay-card">
+            <div class="overlay-icon" id="ovIcon" aria-hidden="true"></div>
+            <h2 id="ovTitle">You win!</h2>
+            <p id="ovMsg">You reached 2048</p>
+            <div class="overlay-actions">
+              <button class="btn btn-ghost" id="keepGoing">Keep going</button>
+              <button class="btn btn-primary" id="restart">New game</button>
+            </div>
           </div>
         </div>
       </div>

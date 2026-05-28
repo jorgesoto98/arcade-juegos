@@ -31,13 +31,20 @@ const fxCanvas  = document.getElementById("fx");
 const undoBtn   = document.getElementById("undo");
 const modeClassicBtn   = document.getElementById("modeClassic");
 const modeBlackholeBtn = document.getElementById("modeBlackhole");
+const modeHint     = document.getElementById("modeHint");
+const collapseCount = document.getElementById("collapseCount");
+const boardToast   = document.getElementById("boardToast");
 
 const overlay   = document.getElementById("overlay");
-const ovEmoji   = document.getElementById("ovEmoji");
+const ovIcon    = document.getElementById("ovIcon");
 const ovTitle   = document.getElementById("ovTitle");
 const ovMsg     = document.getElementById("ovMsg");
 const keepGoingBtn = document.getElementById("keepGoing");
 const restartBtn   = document.getElementById("restart");
+
+/* Íconos SVG del overlay (sin emojis): estrella (victoria) y aspa (derrota) */
+const ICON_WIN  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5l2.6 6.9 6.9.3-5.4 4.3 1.9 6.7L12 17l-5.9 3.7 1.9-6.7-5.4-4.3 6.9-.3z"/></svg>';
+const ICON_OVER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>';
 
 /* ---------- Estado del juego ---------- */
 const state = {
@@ -195,6 +202,7 @@ function move(dir) {
   if (state.mode === "blackhole" && state.moves % BLACKHOLE_INTERVAL === 0) {
     collapseCell();
   }
+  updateModeHint(); // refresca la cuenta regresiva "Next collapse in N"
 
   // ¿Victoria? (solo la primera vez que se alcanza 2048)
   if (!state.won && reachedWin()) {
@@ -494,6 +502,7 @@ function collapseCell() {
   if (navigator.vibrate) navigator.vibrate([8, 30, 8]);
   const { cx, cy, cell } = tileCenter(r, c);
   spawnImplosion(cx, cy, cell);
+  showToast("A cell collapsed");
 }
 
 /* ---------- Deshacer (undo) ---------- */
@@ -544,6 +553,7 @@ function restore(snap) {
   scoreEl.textContent = state.score; // el récord no baja al deshacer
   render();
   renderBlocked();
+  updateModeHint(); // la cuenta regresiva depende de state.moves restaurado
 }
 
 // Activa/desactiva el botón Undo y muestra los usos restantes.
@@ -570,6 +580,28 @@ function setMode(mode) {
   modeClassicBtn.setAttribute("aria-pressed", String(!isBlack));
   modeBlackholeBtn.setAttribute("aria-pressed", String(isBlack));
   localStorage.setItem(MODE_KEY, state.mode);
+  updateModeHint();
+}
+
+// Muestra/oculta la ayuda del modo Black Hole y actualiza la cuenta regresiva
+// "Next collapse in N moves". En Classic la línea queda oculta.
+function updateModeHint() {
+  if (state.mode !== "blackhole") {
+    modeHint.hidden = true;
+    return;
+  }
+  modeHint.hidden = false;
+  const left = BLACKHOLE_INTERVAL - (state.moves % BLACKHOLE_INTERVAL);
+  collapseCount.textContent = `Next collapse in ${left} move${left === 1 ? "" : "s"}`;
+}
+
+// Aviso breve sobre el tablero; se desvanece solo tras ~1.4 s
+let toastTimer = 0;
+function showToast(msg) {
+  boardToast.textContent = msg;
+  boardToast.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => boardToast.classList.remove("show"), 1400);
 }
 
 function loadMode() {
@@ -604,7 +636,8 @@ function showScoreAdd(amount) {
 
 /* ---------- Overlays ---------- */
 function showWin() {
-  ovEmoji.textContent = "🎉";
+  ovIcon.innerHTML = ICON_WIN;
+  ovIcon.classList.remove("is-over");
   ovTitle.textContent = "You win!";
   ovMsg.textContent = `You reached 2048 with ${state.score} points`;
   keepGoingBtn.hidden = false;
@@ -614,7 +647,8 @@ function showWin() {
 }
 
 function showGameOver() {
-  ovEmoji.textContent = "💀";
+  ovIcon.innerHTML = ICON_OVER;
+  ovIcon.classList.add("is-over");
   ovTitle.textContent = "Game over";
   ovMsg.textContent = `No more moves · Score ${state.score}`;
   keepGoingBtn.hidden = true;
@@ -648,6 +682,8 @@ function setup() {
 
   hideOverlay();
   updateUndoBtn();
+  updateModeHint();
+  boardToast.classList.remove("show"); // limpia cualquier aviso previo
   addRandomTile();
   addRandomTile();
   updateScore();
@@ -750,16 +786,19 @@ newGameBtn.addEventListener("click", setup);
 restartBtn.addEventListener("click", setup);
 undoBtn.addEventListener("click", undo);
 
-// Cambiar de modo reinicia la partida
+// Cambiar de modo reinicia la partida (y reajusta el tablero: la línea de
+// ayuda aparece/desaparece y cambia el alto disponible).
 modeClassicBtn.addEventListener("click", () => {
   if (state.mode === "classic") return;
   setMode("classic");
   setup();
+  fitBoard();
 });
 modeBlackholeBtn.addEventListener("click", () => {
   if (state.mode === "blackhole") return;
   setMode("blackhole");
   setup();
+  fitBoard();
 });
 keepGoingBtn.addEventListener("click", () => {
   state.keepGoing = true;
@@ -772,20 +811,37 @@ keepGoingBtn.addEventListener("click", () => {
   }
 });
 
-// Reposiciona las fichas si cambia el tamaño de la ventana (los porcentajes
-// ya son responsive; forzamos repintado por si el navegador lo necesita).
-window.addEventListener("resize", () => {
+/* ---------- Ajuste del tablero al viewport (sin scroll de página) ---------- */
+// El tablero es cuadrado: su lado es el mínimo entre el ancho y el alto
+// disponibles en el escenario, para que el juego completo quepa en pantalla.
+const stageEl = boardWrap.parentElement; // .stage
+function fitBoard() {
+  if (!stageEl) return;
+  const availW = stageEl.clientWidth;
+  const availH = stageEl.clientHeight;
+  if (!availW || !availH) return;
+  const size = Math.max(140, Math.floor(Math.min(availW, availH)));
+  boardWrap.style.width = size + "px";
+  boardWrap.style.height = size + "px";
+  resizeFx(); // el canvas de efectos cubre el tablero
+  // Reposiciona fichas y vórtices (usan % del tablero; forzamos repintado)
   forEachTile((tile) => {
     const el = state.tileEls.get(tile.id);
     if (el) placeTile(el, tile.r, tile.c);
   });
-  // Reposiciona los vórtices y reajusta el canvas de efectos
   state.blockedEls.forEach((el, key) => {
     const [r, c] = key.split(",").map(Number);
     placeTile(el, r, c);
   });
-  resizeFx();
-});
+}
+
+// Reajusta al cambiar tamaño/orientación de la ventana
+window.addEventListener("resize", fitBoard);
+window.addEventListener("orientationchange", fitBoard);
+// Las fuentes web cambian la altura del encabezado: reajusta al cargarlas
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(fitBoard);
+}
 
 /* ---------- Arranque ---------- */
 function init() {
@@ -797,7 +853,7 @@ function init() {
   }
   loadBest();
   loadMode();
-  resizeFx();
   setup();
+  fitBoard();   // ajusta el tablero al espacio disponible tras el primer render
 }
 init();

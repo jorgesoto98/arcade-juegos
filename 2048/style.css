@@ -22,20 +22,24 @@ body {
   font-family: "Sora", system-ui, -apple-system, sans-serif;
   color: var(--ink);
   background: var(--bg-0);
-  min-height: 100dvh;
-  display: grid;
-  place-items: center;
-  padding: 24px 16px;
-  overflow-x: hidden;
+  height: 100svh;          /* alto del viewport (descontando UI del navegador) */
+  height: 100dvh;          /* preferimos dvh donde esté disponible */
+  display: flex;
+  justify-content: center;
+  padding: 10px 14px;
+  overflow: hidden;        /* el juego cabe entero: nunca hay scroll de página */
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Columna a pantalla completa: encabezado + HUD + tablero + pista */
 .app {
   width: 100%;
   max-width: 480px;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 10px;
+  min-height: 0;           /* permite que el escenario encoja */
 }
 
 /* ===== Enlace de regreso al arcade ===== */
@@ -55,10 +59,10 @@ body {
 .back-link:hover { color: var(--ink); border-color: rgba(255,255,255,0.24); }
 .back-link:active { transform: translateY(1px); }
 
-/* ===== Cabecera ===== */
+/* ===== Cabecera (compacta para caber en pantalla) ===== */
 .head { text-align: center; }
 .title {
-  font-size: clamp(2.2rem, 9vw, 3rem);
+  font-size: clamp(1.6rem, 6vw, 2.2rem);
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1;
@@ -66,9 +70,9 @@ body {
 }
 .title span { color: var(--accent-2); }
 .subtitle {
-  margin-top: 10px;
+  margin-top: 4px;
   color: var(--ink-dim);
-  font-size: 0.92rem;
+  font-size: 0.82rem;
 }
 
 /* ===== HUD: marcador + nueva partida ===== */
@@ -183,11 +187,35 @@ body {
   transform: none;
 }
 
+/* Línea de ayuda del modo Black Hole (solo visible en ese modo) */
+.mode-hint {
+  margin-top: -2px;
+  text-align: center;
+  font-size: 0.76rem;
+  line-height: 1.35;
+  color: var(--ink-dim);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.mode-hint[hidden] { display: none; }
+.mode-hint-count { color: var(--accent-2); font-weight: 600; }
+
+/* ===== Escenario: ocupa el alto restante y centra el tablero ===== */
+.stage {
+  flex: 1;                 /* toma todo el espacio vertical sobrante */
+  min-height: 0;           /* clave para que pueda encoger dentro del flex */
+  min-width: 0;
+  display: grid;
+  place-items: center;
+}
+
 /* ===== Tablero ===== */
+/* El tamaño cuadrado lo fija JS con min(ancho, alto disponibles).
+   width:min(...) es solo el valor inicial antes de que corra el script. */
 .board-wrap {
   position: relative;
-  width: min(90vw, 480px);
-  margin: 0 auto;
+  width: min(100%, 480px);
   background: rgba(255,255,255,0.04);
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: var(--radius);
@@ -355,6 +383,31 @@ body {
   z-index: 5;
 }
 
+/* ===== Aviso flotante sobre el tablero (p.ej. "A cell collapsed") ===== */
+.board-toast {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-6px);
+  z-index: 5;
+  padding: 6px 13px;
+  border-radius: 999px;
+  background: rgba(10, 12, 28, 0.88);
+  border: 1px solid rgba(124, 92, 255, 0.55);
+  box-shadow: 0 6px 18px rgba(5, 8, 22, 0.5);
+  color: var(--ink);
+  font-size: 0.76rem;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 240ms ease, transform 240ms ease;
+}
+.board-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
 /* ===== Overlay de victoria / derrota ===== */
 .overlay[hidden] { display: none; }
 .overlay {
@@ -378,7 +431,15 @@ body {
   box-shadow: var(--shadow);
   max-width: 88%;
 }
-.overlay-emoji { font-size: 3rem; }
+/* Ícono SVG del overlay (sustituye al emoji) */
+.overlay-icon {
+  display: grid;
+  place-items: center;
+  margin: 0 auto 4px;
+  color: var(--accent-2);
+}
+.overlay-icon svg { width: 52px; height: 52px; display: block; }
+.overlay-icon.is-over { color: var(--ink-dim); }
 .overlay-card h2 {
   margin: 6px 0 8px;
   font-size: 1.7rem;
@@ -435,4 +496,5 @@ body {
   .tile.pop-in, .tile.merged, .stat-value.bump { animation: none; }
   .vortex::before { animation: none; }
   .vortex.collapse { animation: none; }
+  .board-toast { transition: none; }
 }
