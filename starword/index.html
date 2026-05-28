@@ -24,13 +24,21 @@
         </div>
         <div class="topbar-actions">
           <button class="icon-btn" id="helpBtn" aria-label="How to play" title="How to play">?</button>
-          <button class="icon-btn" id="statsBtn" aria-label="Statistics" title="Statistics">📊</button>
+          <button class="icon-btn" id="statsBtn" aria-label="Statistics" title="Statistics">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+              <rect x="3" y="13" width="4" height="8" rx="1" fill="currentColor"/>
+              <rect x="10" y="8" width="4" height="13" rx="1" fill="currentColor"/>
+              <rect x="17" y="4" width="4" height="17" rx="1" fill="currentColor"/>
+            </svg>
+          </button>
         </div>
       </div>
     </header>
 
     <!-- Rejilla de adivinanzas (6 filas × 5 casillas) -->
-    <section class="board" id="board" aria-label="Guess grid"></section>
+    <section class="board-area">
+      <div class="board" id="board" aria-label="Guess grid"></div>
+    </section>
 
     <!-- Anuncios para lectores de pantalla + mensajes efímeros -->
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -41,11 +49,11 @@
     <!-- ===== Modal: resultado / estadísticas ===== -->
     <div class="modal" id="statsModal" hidden>
       <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-        <button class="modal-close" id="statsClose" aria-label="Close">✕</button>
+        <button class="modal-close" id="statsClose" aria-label="Close">×</button>
         <h2 class="modal-title" id="modalTitle">Statistics</h2>
 
         <div class="result-banner" id="resultBanner" hidden>
-          <div class="result-emoji" id="resultEmoji">🎉</div>
+          <div class="result-emoji" id="resultEmoji"></div>
           <p class="result-text" id="resultText">—</p>
           <p class="result-answer" id="resultAnswer"></p>
         </div>
@@ -71,7 +79,7 @@
     <!-- ===== Modal: cómo jugar ===== -->
     <div class="modal" id="helpModal" hidden>
       <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
-        <button class="modal-close" id="helpClose" aria-label="Close">✕</button>
+        <button class="modal-close" id="helpClose" aria-label="Close">×</button>
         <h2 class="modal-title" id="helpTitle">How to play</h2>
         <p class="help-line">Guess the <strong>STARWORD</strong> in 6 tries. Each guess must be a valid 5-letter word.</p>
         <div class="help-examples">

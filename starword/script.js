@@ -7,7 +7,7 @@
    - Modo Practice: palabra aleatoria, infinita.
    Feedback por casilla: correcta (morado/acento), presente (ámbar),
    ausente (gris), con volteo al evaluar. Teclado físico y en pantalla.
-   Estadísticas, compartir como rejilla de emojis y accesibilidad.
+   Estadísticas, compartir como rejilla de bloques y accesibilidad.
    ============================================================ */
 
 /* ---------- Constantes ---------- */
@@ -197,7 +197,7 @@ function buildKeyboard() {
       btn.className = "key";
       btn.dataset.key = k;
       if (k === "enter") { btn.textContent = "Enter"; btn.classList.add("key-wide"); }
-      else if (k === "back") { btn.textContent = "⌫"; btn.classList.add("key-wide"); btn.setAttribute("aria-label", "Backspace"); }
+      else if (k === "back") { btn.textContent = "Del"; btn.classList.add("key-wide"); btn.setAttribute("aria-label", "Backspace"); }
       else btn.textContent = k;
       btn.addEventListener("click", () => handleKey(k));
       rowEl.appendChild(btn);
@@ -415,9 +415,12 @@ async function finishGame(won) {
 }
 
 /* ============================================================
-   Compartir (rejilla de emojis)
-   🟪 correcta · 🟦 presente · ⬛ ausente
+   Compartir (rejilla de bloques, SIN emojis)
+   Bloques de sombreado Unicode (no emoji): correcta = █, presente = ▒,
+   ausente = ░. Se añade una pequeña leyenda al final.
    ============================================================ */
+const SHARE_BLOCK = { correct: "█", present: "▒", absent: "░" };
+
 function buildShareText() {
   const head =
     state.mode === "daily"
@@ -426,11 +429,10 @@ function buildShareText() {
   const score = state.won ? `${state.guesses.length}/${MAX_ROWS}` : `X/${MAX_ROWS}`;
   const lines = state.guesses.map((g) => {
     const res = evaluate(g, state.answer);
-    return res
-      .map((s) => (s === "correct" ? "🟪" : s === "present" ? "🟦" : "⬛"))
-      .join("");
+    return res.map((s) => SHARE_BLOCK[s]).join("");
   });
-  return `${head} ${score}\n\n${lines.join("\n")}`;
+  const legend = "█ correct  ▒ present  ░ absent";
+  return `${head} ${score}\n\n${lines.join("\n")}\n\n${legend}`;
 }
 
 async function shareResult() {
@@ -454,6 +456,16 @@ async function shareResult() {
     catch { announce("Copy not supported"); }
     document.body.removeChild(ta);
   }
+}
+
+/* Estrella SVG (sin emoji) para el banner de resultado.
+   filled=true → sólida (victoria); filled=false → contorno (derrota). */
+function STAR_SVG(filled) {
+  const path =
+    "M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z";
+  return filled
+    ? `<svg viewBox="0 0 24 24" width="46" height="46" aria-hidden="true" focusable="false"><path fill="#22d3ee" d="${path}"/></svg>`
+    : `<svg viewBox="0 0 24 24" width="46" height="46" aria-hidden="true" focusable="false"><path fill="none" stroke="#9aa6cc" stroke-width="1.6" stroke-linejoin="round" d="${path}"/></svg>`;
 }
 
 /* ============================================================
@@ -490,11 +502,11 @@ function openStats(showResult) {
   if (showResult && state.over) {
     resultBanner.hidden = false;
     if (state.won) {
-      resultEmoji.textContent = "🌟";
+      resultEmoji.innerHTML = STAR_SVG(true); // estrella SVG sólida (sin emoji)
       resultText.textContent = `Solved in ${state.guesses.length}/${MAX_ROWS}`;
       resultAnswer.innerHTML = `The star was <strong>${state.answer}</strong>`;
     } else {
-      resultEmoji.textContent = "💫";
+      resultEmoji.innerHTML = STAR_SVG(false); // estrella SVG contorno (sin emoji)
       resultText.textContent = "Out of tries";
       resultAnswer.innerHTML = `The star was <strong>${state.answer}</strong>`;
     }
