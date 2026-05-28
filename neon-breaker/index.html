@@ -26,7 +26,7 @@
       </div>
       <div class="stat">
         <span class="stat-label">Lives</span>
-        <span class="stat-value" id="lives">♥♥♥</span>
+        <span class="stat-value" id="lives">3</span>
       </div>
       <div class="stat">
         <span class="stat-label">Level</span>
@@ -38,20 +38,22 @@
       </div>
     </div>
 
-    <!-- ===== Play field ===== -->
-    <div class="stage-wrap" id="stageWrap">
-      <canvas class="stage" id="stage" aria-label="Neon Breaker play field" role="img"></canvas>
-      <canvas class="fx" id="fx" aria-hidden="true"></canvas>
+    <!-- ===== Play field (la región flexible centra y dimensiona el lienzo) ===== -->
+    <div class="stage-region" id="stageRegion">
+      <div class="stage-wrap" id="stageWrap">
+        <canvas class="stage" id="stage" aria-label="Neon Breaker play field" role="img"></canvas>
+        <canvas class="fx" id="fx" aria-hidden="true"></canvas>
 
-      <!-- Overlay genérico (start / level clear / game over / win) -->
-      <div class="overlay" id="overlay" hidden>
-        <div class="overlay-card">
-          <div class="overlay-emoji" id="ovEmoji">🧱</div>
-          <h2 class="overlay-title" id="ovTitle">Neon Breaker</h2>
-          <p class="overlay-text" id="ovText">—</p>
-          <div class="overlay-actions">
-            <button class="btn btn-ghost" id="ovSecondary" hidden>Menu</button>
-            <button class="btn btn-primary" id="ovPrimary">Play</button>
+        <!-- Overlay genérico (start / level clear / game over / win) -->
+        <div class="overlay" id="overlay" hidden>
+          <div class="overlay-card">
+            <div class="overlay-icon" id="ovIcon" aria-hidden="true"></div>
+            <h2 class="overlay-title" id="ovTitle">Neon Breaker</h2>
+            <p class="overlay-text" id="ovText">—</p>
+            <div class="overlay-actions">
+              <button class="btn btn-ghost" id="ovSecondary" hidden>Menu</button>
+              <button class="btn btn-primary" id="ovPrimary">Play</button>
+            </div>
           </div>
         </div>
       </div>
@@ -59,16 +61,20 @@
 
     <!-- ===== Controles ===== -->
     <section class="controls">
-      <button class="icon-btn" id="soundToggle" aria-label="Toggle sound" title="Sound">🔊</button>
+      <button class="icon-btn" id="soundToggle" aria-label="Toggle sound" title="Sound"></button>
       <button class="btn btn-ghost" id="pauseBtn">Pause</button>
       <button class="btn btn-ghost" id="restartBtn">Restart</button>
     </section>
 
     <p class="legend" aria-hidden="true">
-      <span><b style="color:#22d3ee">✦</b> Multiball</span>
-      <span><b style="color:#7c5cff">↔</b> Wide</span>
-      <span><b style="color:#34d399">≈</b> Slow</span>
-      <span><b style="color:#f472b6">♥</b> Life</span>
+      <span><svg width="14" height="14" viewBox="0 0 24 24" fill="#22d3ee"><circle cx="12" cy="7" r="3"/><circle cx="7" cy="16" r="3"/><circle cx="17" cy="16" r="3"/></svg> Multiball</span>
+      <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7c5cff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><polyline points="7,8 3,12 7,16"/><polyline points="17,8 21,12 17,16"/></svg> Wide</span>
+      <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round"><path d="M3 12 Q7.5 4 12 12 T21 12"/></svg> Slow</span>
+      <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f472b6" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Life</span>
+      <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fb7185" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="5"/><polyline points="6,11 12,5 18,11"/></svg> Laser</span>
+      <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round"><path d="M5 11 a7 7 0 0 0 14 0"/><circle cx="12" cy="7" r="2.4" fill="#38bdf8" stroke="none"/></svg> Catch</span>
+      <span><svg width="14" height="14" viewBox="0 0 24 24" fill="#fb923c"><path d="M12 3 Q19 11 14 18 Q12 20.5 10 18 Q5 11 12 3 Z"/></svg> Pierce</span>
+      <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2.2" stroke-linejoin="round"><path d="M12 3 L19 6 V11 Q19 17 12 21 Q5 17 5 11 V6 Z"/></svg> Shield</span>
     </p>
   </main>
 

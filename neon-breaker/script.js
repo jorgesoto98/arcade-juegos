@@ -19,7 +19,7 @@ const livesEl    = document.getElementById("lives");
 const levelEl    = document.getElementById("level");
 const bestEl     = document.getElementById("best");
 const overlay    = document.getElementById("overlay");
-const ovEmoji    = document.getElementById("ovEmoji");
+const ovIcon     = document.getElementById("ovIcon");
 const ovTitle    = document.getElementById("ovTitle");
 const ovText     = document.getElementById("ovText");
 const ovPrimary  = document.getElementById("ovPrimary");
@@ -27,6 +27,8 @@ const ovSecondary= document.getElementById("ovSecondary");
 const soundToggle= document.getElementById("soundToggle");
 const pauseBtn   = document.getElementById("pauseBtn");
 const restartBtn = document.getElementById("restartBtn");
+const stageRegion= document.getElementById("stageRegion");
+const stageWrap  = document.getElementById("stageWrap");
 
 /* ---------- Constantes del mundo virtual ---------- */
 const VW = 480;          // ancho virtual
@@ -42,9 +44,9 @@ const MAX_BOUNCE = (60 * Math.PI) / 180; // ángulo máx. de rebote en la pala
 
 const BALL_R = 8;
 const BASE_SPEED = 300;           // velocidad base de la bola (nivel 1)
-const SPEED_PER_LEVEL = 26;       // incremento por nivel
-const SPEED_RAMP = 7;             // incremento gradual por ladrillo roto
-const MAX_BALLS = 6;
+const SPEED_PER_LEVEL = 22;       // incremento por nivel
+const SPEED_RAMP = 6;             // incremento gradual por ladrillo roto
+const MAX_BALLS = 8;
 const SLOW_FACTOR = 0.62;
 
 /* Power-ups */
@@ -52,20 +54,69 @@ const POWER_FALL = 165;           // px/s de caída
 const POWER_SIZE = 26;
 const WIDE_TIME = 12;             // s de pala ancha
 const SLOW_TIME = 9;              // s de bola lenta
-const POWER_TYPES = ["MULTI", "WIDE", "SLOW", "LIFE"];
+const LASER_TIME = 8;             // s de cañón láser
+const CATCH_TIME = 11;            // s de pala pegajosa
+const PIERCE_TIME = 7;            // s de bola perforante
+const SHIELD_TIME = 10;           // s de escudo inferior
+const LASER_INTERVAL = 0.42;      // s entre disparos automáticos
+const LASER_SPEED = 540;          // px/s de los disparos
+// Sin emojis: cada power-up se dibuja como icono vectorial (ver drawPowerIcon)
 const POWER_STYLE = {
-  MULTI: { color: "#22d3ee", glyph: "✦" },
-  WIDE:  { color: "#7c5cff", glyph: "↔" },
-  SLOW:  { color: "#34d399", glyph: "≈" },
-  LIFE:  { color: "#f472b6", glyph: "♥" },
+  MULTI:  { color: "#22d3ee" },
+  WIDE:   { color: "#7c5cff" },
+  SLOW:   { color: "#34d399" },
+  LIFE:   { color: "#f472b6" },
+  LASER:  { color: "#fb7185" },
+  CATCH:  { color: "#38bdf8" },
+  PIERCE: { color: "#fb923c" },
+  SHIELD: { color: "#facc15" },
 };
+// Pesos para el sorteo de power-ups (los útiles/espectaculares más frecuentes,
+// LIFE el más raro).
+const POWER_WEIGHTS = [
+  ["MULTI", 17], ["WIDE", 13], ["CATCH", 12], ["LASER", 12],
+  ["SHIELD", 11], ["SLOW", 10], ["PIERCE", 9], ["LIFE", 6],
+];
+const POWER_TYPES = POWER_WEIGHTS.map((w) => w[0]);
+
+/* ---------- Iconos SVG (sin emojis) ----------
+   Marcas vectoriales para los overlays y el botón de sonido. */
+const OV_ICONS = {
+  start: `<svg width="54" height="54" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="6" y="9" width="16" height="9" rx="2" fill="#22d3ee"/>
+      <rect x="26" y="9" width="16" height="9" rx="2" fill="#7c5cff"/>
+      <rect x="6" y="22" width="16" height="9" rx="2" fill="#f472b6"/>
+      <rect x="26" y="22" width="16" height="9" rx="2" fill="#34d399"/>
+      <circle cx="24" cy="40" r="3.4" fill="#eef2ff"/></svg>`,
+  sparkle: `<svg width="54" height="54" viewBox="0 0 48 48" fill="#22d3ee" xmlns="http://www.w3.org/2000/svg">
+      <path d="M24 5 L27.5 20.5 L43 24 L27.5 27.5 L24 43 L20.5 27.5 L5 24 L20.5 20.5 Z"/></svg>`,
+  burst: `<svg width="54" height="54" viewBox="0 0 48 48" fill="none" stroke="#f472b6" stroke-width="3" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg">
+      <line x1="24" y1="7" x2="24" y2="17"/><line x1="24" y1="31" x2="24" y2="41"/>
+      <line x1="7" y1="24" x2="17" y2="24"/><line x1="31" y1="24" x2="41" y2="24"/>
+      <line x1="13" y1="13" x2="20" y2="20"/><line x1="28" y1="28" x2="35" y2="35"/>
+      <line x1="35" y1="13" x2="28" y2="20"/><line x1="20" y1="28" x2="13" y2="35"/></svg>`,
+  trophy: `<svg width="54" height="54" viewBox="0 0 48 48" fill="none" stroke="#fbbf24" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg">
+      <path d="M16 9 H32 V19 a8 8 0 0 1 -16 0 Z"/>
+      <path d="M16 12 H10 a4 4 0 0 0 7 7"/><path d="M32 12 H38 a4 4 0 0 1 -7 7"/>
+      <line x1="24" y1="27" x2="24" y2="33"/><path d="M17 39 H31 L29 33 H19 Z"/></svg>`,
+  pause: `<svg width="54" height="54" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+      <rect x="16" y="12" width="6" height="24" rx="2" fill="#9aa6cc"/>
+      <rect x="26" y="12" width="6" height="24" rx="2" fill="#9aa6cc"/></svg>`,
+};
+const SOUND_ON_SVG = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+    <path d="M11 5 L6 9 H3 V15 H6 L11 19 Z" fill="currentColor" stroke="none"/>
+    <path d="M16 9 a4 4 0 0 1 0 6"/><path d="M18.5 6.5 a8 8 0 0 1 0 11"/></svg>`;
+const SOUND_OFF_SVG = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+    <path d="M11 5 L6 9 H3 V15 H6 L11 19 Z" fill="currentColor" stroke="none"/>
+    <line x1="16" y1="9" x2="22" y2="15"/><line x1="22" y1="9" x2="16" y2="15"/></svg>`;
 
 /* ---------- Diseño de niveles ----------
-   '.' vacío · '#' 1 golpe · '=' 2 golpes · '@' 3 golpes.
-   El color del ladrillo lo da su fila (paleta neón). */
+   '.' vacío · '#' 1 golpe · '=' 2 golpes · '@' 3 golpes ·
+   'o' ladrillo "spawner" (1 golpe): al destruirlo suelta pelotas extra.
+   El color del ladrillo lo da su fila (paleta neón); 'o' tiene color propio.
+   12 niveles de dificultad creciente. */
 const LEVELS = [
   [ // 1 · muro
-    "#########",
     "#########",
     "#########",
     "#########",
@@ -84,24 +135,81 @@ const LEVELS = [
     ".#.#.#.#.",
     "#.#.#.#.#",
   ],
-  [ // 4 · núcleo resistente
+  [ // 4 · columnas con spawner
+    "#.#.#.#.#",
+    "#.#.#.#.#",
+    "#.o.#.o.#",
+    "#.#.#.#.#",
+    "#.#.#.#.#",
+  ],
+  [ // 5 · franjas resistentes
+    "=========",
+    "#########",
+    "=========",
+    "#########",
+    "=========",
+  ],
+  [ // 6 · núcleo de diamante
     "....@....",
-    "...@@@...",
-    "..@===@..",
-    "...@@@...",
+    "...===...",
+    "..=#o#=..",
+    "...===...",
     "....@....",
   ],
-  [ // 5 · fortaleza
+  [ // 7 · zigzag
+    "##.....##",
+    ".##...##.",
+    "..##.##..",
+    "...###...",
+    "..##o##..",
+    ".##...##.",
+    "##.....##",
+  ],
+  [ // 8 · fortaleza
     "@@@@@@@@@",
     "@#######@",
     "@#=====#@",
+    "@#=o#o=#@",
+    "@#=====#@",
     "@#######@",
+    "@@@@@@@@@",
+  ],
+  [ // 9 · rejilla pesada con spawners
+    "=========",
+    "=o=o=o=o=",
+    "=========",
+    "=o=o=o=o=",
+    "=========",
+  ],
+  [ // 10 · torres gemelas
+    "@@@...@@@",
+    "@#@...@#@",
+    "@#@.o.@#@",
+    "@#@...@#@",
+    "@@@...@@@",
+    "#########",
+  ],
+  [ // 11 · laberinto
+    "@#=#@#=#@",
+    "#.=.o.=.#",
+    "=#@#=#@#=",
+    "#.=.o.=.#",
+    "@#=#@#=#@",
+  ],
+  [ // 12 · desafío final
+    "@@@@@@@@@",
+    "@=======@",
+    "@=#o#o#=@",
+    "@=#@@@#=@",
+    "@=#o#o#=@",
+    "@=======@",
     "@@@@@@@@@",
   ],
 ];
 
 const ROW_COLORS = ["#22d3ee", "#7c5cff", "#f472b6", "#34d399", "#fbbf24", "#60a5fa", "#f59e0b"];
-const HITS_FOR = { "#": 1, "=": 2, "@": 3 };
+const HITS_FOR = { "#": 1, "=": 2, "@": 3, "o": 1 };
+const SPAWNER_COLOR = "#dbeafe";    // color propio del ladrillo spawner
 
 /* Geometría de la rejilla de ladrillos */
 const GRID_COLS = 9;
@@ -124,9 +232,15 @@ const state = {
   balls: [],
   bricks: [],
   powers: [],           // power-ups cayendo
+  lasers: [],           // disparos del cañón láser
   wideUntil: 0,
   slowUntil: 0,
   slowActive: false,
+  laserUntil: 0,        // cañón láser activo hasta este tiempo
+  lastLaserFire: 0,
+  catchUntil: 0,        // pala pegajosa
+  pierceUntil: 0,       // bola perforante (fireball)
+  shieldUntil: 0,       // escudo inferior
   keyLeft: false,
   keyRight: false,
   pointerActive: false,
@@ -152,8 +266,23 @@ function roundRect(c, x, y, w, h, r) {
 }
 
 /* ============================================================
-   Canvas: escalado responsive + HiDPI
+   Canvas: ajuste al viewport + HiDPI
    ============================================================ */
+/* Dimensiona .stage-wrap para que el lienzo (proporción VW:VH = 3:4)
+   quepa en el espacio disponible de .stage-region sin provocar scroll. */
+function fitStage() {
+  const availW = stageRegion.clientWidth;
+  const availH = stageRegion.clientHeight;
+  if (!availW || !availH) return;
+  const ratio = VW / VH;               // 0.75 (más alto que ancho)
+  let w = availH * ratio;
+  let h = availH;
+  if (w > availW) { w = availW; h = availW / ratio; }
+  stageWrap.style.width = Math.round(w) + "px";
+  stageWrap.style.height = Math.round(h) + "px";
+  resizeCanvas();
+}
+
 function resizeCanvas() {
   const rect = stage.getBoundingClientRect();
   if (!rect.width || !rect.height) return;
@@ -179,6 +308,17 @@ function clientToWorldX(clientX) {
 /* ============================================================
    Construcción de nivel
    ============================================================ */
+/* Sorteo ponderado del tipo de power-up */
+function pickPowerType() {
+  const total = POWER_WEIGHTS.reduce((s, w) => s + w[1], 0);
+  let r = Math.random() * total;
+  for (const [type, weight] of POWER_WEIGHTS) {
+    r -= weight;
+    if (r <= 0) return type;
+  }
+  return POWER_WEIGHTS[0][0];
+}
+
 function buildLevel(levelIdx) {
   const layout = LEVELS[levelIdx];
   state.bricks = [];
@@ -188,6 +328,7 @@ function buildLevel(levelIdx) {
       const ch = row[c];
       const hits = HITS_FOR[ch];
       if (!hits) continue;
+      const spawner = ch === "o";
       state.bricks.push({
         x: GRID_PAD + c * (BRICK_W + GRID_GAP),
         y: GRID_TOP + r * (BRICK_H + GRID_GAP),
@@ -195,24 +336,21 @@ function buildLevel(levelIdx) {
         h: BRICK_H,
         hits,
         maxHits: hits,
-        color: ROW_COLORS[r % ROW_COLORS.length],
+        color: spawner ? SPAWNER_COLOR : ROW_COLORS[r % ROW_COLORS.length],
         phase: Math.random() * Math.PI * 2,  // desfase del "latido"
         alive: true,
+        spawner,                              // suelta pelotas extra al destruirse
         power: null,
       });
     }
   });
 
-  // Reparte power-ups entre algunos ladrillos al azar
-  const alive = state.bricks.filter((b) => b.alive);
-  const count = Math.min(6, Math.max(3, Math.floor(alive.length * 0.16)));
-  const pool = [...alive];
+  // Reparte power-ups entre ladrillos normales (los spawner ya tienen su rol)
+  const pool = state.bricks.filter((b) => b.alive && !b.spawner);
+  const count = Math.min(8, Math.max(4, Math.floor(pool.length * 0.18)));
   for (let i = 0; i < count && pool.length; i++) {
     const idx = Math.floor(Math.random() * pool.length);
-    const brick = pool.splice(idx, 1)[0];
-    // MULTI aparece más; LIFE es raro
-    const roll = Math.random();
-    brick.power = roll < 0.42 ? "MULTI" : roll < 0.68 ? "WIDE" : roll < 0.9 ? "SLOW" : "LIFE";
+    pool.splice(idx, 1)[0].power = pickPowerType();
   }
 
   state.ballSpeed = BASE_SPEED + levelIdx * SPEED_PER_LEVEL;
@@ -256,17 +394,36 @@ function rescaleBalls() {
 
 function launchBall() {
   let launched = false;
+  const half = state.paddle.w / 2;
   for (const b of state.balls) {
     if (b.stuck) {
-      const angle = rand(-0.35, 0.35);
+      // Si la bola venía pegada por CATCH, se lanza según su posición en la
+      // pala (control de ángulo); si no, con un ángulo aleatorio suave.
+      const angle = typeof b.catchOffset === "number"
+        ? clamp(b.catchOffset / half, -1, 1) * MAX_BOUNCE
+        : rand(-0.35, 0.35);
       const sp = currentSpeed();
       b.vx = Math.sin(angle) * sp;
       b.vy = -Math.cos(angle) * sp;
       b.stuck = false;
+      b.catchOffset = undefined;
       launched = true;
     }
   }
   if (launched) { state.mode = "play"; beep(560, 0.07, "triangle", 0.05); }
+}
+
+/* SPAWNER: el ladrillo 'o' suelta pelotas extra hacia abajo al destruirse */
+function spawnBonusBalls(x, y, n) {
+  for (let i = 0; i < n; i++) {
+    if (state.balls.length >= MAX_BALLS) break;
+    const ang = rand(Math.PI * 0.25, Math.PI * 0.75); // cono hacia abajo
+    const sp = currentSpeed();
+    state.balls.push({
+      x, y, r: BALL_R, stuck: false, trail: [],
+      vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp,
+    });
+  }
 }
 
 /* MULTIBOLA: duplica las bolas activas con ángulos divergentes */
@@ -316,7 +473,36 @@ function applyPower(type) {
       updateHud();
       beep(880, 0.16, "sine", 0.06);
       break;
+    case "LASER":
+      state.laserUntil = state.t + LASER_TIME;
+      state.lastLaserFire = state.t - LASER_INTERVAL; // dispara enseguida
+      beep(620, 0.1, "square", 0.04);
+      break;
+    case "CATCH":
+      state.catchUntil = state.t + CATCH_TIME;
+      beep(420, 0.12, "triangle", 0.05);
+      break;
+    case "PIERCE":
+      state.pierceUntil = state.t + PIERCE_TIME;
+      beep(540, 0.12, "sawtooth", 0.05);
+      break;
+    case "SHIELD":
+      state.shieldUntil = state.t + SHIELD_TIME;
+      beep(300, 0.16, "sine", 0.05);
+      break;
   }
+}
+
+/* Limpia todos los efectos temporales (al perder vida o cambiar de nivel) */
+function clearTimedPowers() {
+  state.wideUntil = 0;
+  state.slowUntil = 0;
+  state.slowActive = false;
+  state.laserUntil = 0;
+  state.catchUntil = 0;
+  state.pierceUntil = 0;
+  state.shieldUntil = 0;
+  state.lasers = [];
 }
 
 /* ============================================================
@@ -354,9 +540,12 @@ function update(dt) {
   const half = state.paddle.w / 2;
   state.paddle.x = clamp(state.paddle.x, half, VW - half);
 
-  // Bolas pegadas siguen la pala
+  // Bolas pegadas siguen la pala (con offset si fueron atrapadas por CATCH)
   for (const b of state.balls) {
-    if (b.stuck) { b.x = state.paddle.x; b.y = PADDLE_Y - PADDLE_H / 2 - b.r - 1; }
+    if (!b.stuck) continue;
+    const off = typeof b.catchOffset === "number" ? b.catchOffset : 0;
+    b.x = clamp(state.paddle.x + off, half, VW - half);
+    b.y = PADDLE_Y - PADDLE_H / 2 - b.r - 1;
   }
 
   if (state.mode === "play") {
@@ -373,7 +562,14 @@ function update(dt) {
       if (b.trail.length > 10) b.trail.shift();
     }
 
+    // Cañón láser: dispara solo mientras está activo
+    if (state.t < state.laserUntil && state.t - state.lastLaserFire >= LASER_INTERVAL) {
+      fireLaser();
+      state.lastLaserFire = state.t;
+    }
+    moveLasers(dt);
     movePowers(dt);
+
     if (!state.bricks.some((b) => b.alive)) { onLevelClear(); return; }
     if (!state.balls.length) onBallLost();
   }
@@ -392,6 +588,13 @@ function moveBalls(dt) {
     else if (b.x + b.r > VW) { b.x = VW - b.r; b.vx = -Math.abs(b.vx); wallBeep(); }
     if (b.y - b.r < WALL) { b.y = WALL + b.r; b.vy = Math.abs(b.vy); wallBeep(); }
 
+    // Escudo inferior: rebota en el fondo en vez de perder la bola
+    if (state.t < state.shieldUntil && b.vy > 0 && b.y + b.r >= VH - 4) {
+      b.y = VH - 4 - b.r;
+      b.vy = -Math.abs(b.vy);
+      shieldBeep();
+    }
+
     // Suelo → bola perdida
     if (b.y - b.r > VH) { state.balls.splice(i, 1); continue; }
 
@@ -403,13 +606,22 @@ function moveBalls(dt) {
     // así una bola que entra por el costado no se "pega" rebotando hacia arriba.
     if (b.vy > 0 && prevBottom <= pTop && b.y + b.r >= pTop &&
         b.x >= p.x - half - b.r && b.x <= p.x + half + b.r) {
-      const rel = clamp((b.x - p.x) / (half + b.r), -1, 1);
-      const angle = rel * MAX_BOUNCE;
-      const sp = currentSpeed();
-      b.vx = Math.sin(angle) * sp;
-      b.vy = -Math.cos(angle) * sp;
-      b.y = pTop - b.r - 0.1;
-      paddleBeep();
+      if (state.t < state.catchUntil) {
+        // CATCH: la bola se queda pegada hasta que el jugador la relanza
+        b.stuck = true;
+        b.vx = 0; b.vy = 0;
+        b.catchOffset = clamp(b.x - p.x, -half + 8, half - 8);
+        b.y = pTop - b.r - 0.1;
+        catchBeep();
+      } else {
+        const rel = clamp((b.x - p.x) / (half + b.r), -1, 1);
+        const angle = rel * MAX_BOUNCE;
+        const sp = currentSpeed();
+        b.vx = Math.sin(angle) * sp;
+        b.vy = -Math.cos(angle) * sp;
+        b.y = pTop - b.r - 0.1;
+        paddleBeep();
+      }
       if (navigator.vibrate) navigator.vibrate(6);
     }
 
@@ -418,8 +630,10 @@ function moveBalls(dt) {
   }
 }
 
-/* Colisión bola-ladrillo por mínima penetración (rebote correcto por lado) */
+/* Colisión bola-ladrillo por mínima penetración (rebote correcto por lado).
+   Con PIERCE activo la bola atraviesa los ladrillos sin rebotar. */
 function hitBricks(b) {
+  const pierce = state.t < state.pierceUntil;
   for (const br of state.bricks) {
     if (!br.alive) continue;
     if (b.x + b.r < br.x || b.x - b.r > br.x + br.w ||
@@ -430,6 +644,12 @@ function hitBricks(b) {
     const cy = clamp(b.y, br.y, br.y + br.h);
     const dx = b.x - cx, dy = b.y - cy;
     if (dx * dx + dy * dy > b.r * b.r) continue;
+
+    if (pierce) {
+      // Atraviesa: daña y sigue (puede destruir varios en una pasada)
+      damageBrick(br);
+      continue;
+    }
 
     // Penetraciones por cada lado → resolver por el eje de menor solape
     const overL = b.x + b.r - br.x;
@@ -460,6 +680,7 @@ function damageBrick(br) {
     state.score += 25;
     state.ballSpeed += SPEED_RAMP;          // la bola acelera al destruir
     if (br.power) dropPower(br.power, br.x + br.w / 2, br.y + br.h / 2);
+    if (br.spawner) spawnBonusBalls(br.x + br.w / 2, br.y + br.h / 2, 2);
     burst(br.x + br.w / 2, br.y + br.h / 2, br.color);
     breakBeep();
     if (navigator.vibrate) navigator.vibrate(10);
@@ -467,6 +688,31 @@ function damageBrick(br) {
     crackBeep();
   }
   updateHud();
+}
+
+/* ---------- Cañón láser ---------- */
+function fireLaser() {
+  const p = state.paddle;
+  const half = p.w / 2;
+  const y = PADDLE_Y - PADDLE_H / 2;
+  state.lasers.push({ x: p.x - half + 7, y }, { x: p.x + half - 7, y });
+  laserBeep();
+}
+function moveLasers(dt) {
+  for (let i = state.lasers.length - 1; i >= 0; i--) {
+    const L = state.lasers[i];
+    L.y -= LASER_SPEED * dt;
+    if (L.y < 0) { state.lasers.splice(i, 1); continue; }
+    // Impacto con el primer ladrillo que toca
+    for (const br of state.bricks) {
+      if (!br.alive) continue;
+      if (L.x >= br.x && L.x <= br.x + br.w && L.y <= br.y + br.h && L.y >= br.y) {
+        damageBrick(br);
+        state.lasers.splice(i, 1);
+        break;
+      }
+    }
+  }
 }
 
 function movePowers(dt) {
@@ -495,6 +741,7 @@ function onBallLost() {
   state.lives--;
   updateHud();
   state.powers = [];
+  clearTimedPowers();
   resetPaddle();
   if (state.lives <= 0) { onGameOver(); return; }
   // Sirve una nueva bola
@@ -510,7 +757,7 @@ function onLevelClear() {
   celebrate();
   winBeep();
   showOverlay({
-    emoji: "✨",
+    icon: "sparkle",
     title: `Level ${state.level + 1} cleared`,
     text: `Score ${state.score}. Get ready for the next wave.`,
     primary: { label: "Next level", onClick: () => startLevel(state.level + 1) },
@@ -521,7 +768,7 @@ function onGameOver() {
   state.mode = "gameover";
   saveBest();
   showOverlay({
-    emoji: "💥",
+    icon: "burst",
     title: "Game over",
     text: `You scored ${state.score}. Best ${state.best}.`,
     primary: { label: "Play again", onClick: () => startGame() },
@@ -534,7 +781,7 @@ function onWin() {
   celebrate();
   winBeep();
   showOverlay({
-    emoji: "🏆",
+    icon: "trophy",
     title: "You broke them all!",
     text: `Final score ${state.score}. Best ${state.best}.`,
     primary: { label: "Play again", onClick: () => startGame() },
@@ -549,8 +796,7 @@ function startLevel(levelIdx) {
   buildLevel(levelIdx);
   resetPaddle();
   state.powers = [];
-  state.slowUntil = 0;
-  state.slowActive = false;
+  clearTimedPowers();
   state.balls = [newBall(true)];
   state.mode = "serve";
   hideOverlay();
@@ -577,7 +823,7 @@ function togglePause() {
     state.mode = "paused";
     pauseBtn.textContent = "Resume";
     showOverlay({
-      emoji: "⏸️",
+      icon: "pause",
       title: "Paused",
       text: "Take a breath. The bricks aren't going anywhere.",
       primary: { label: "Resume", onClick: resumeFromPause },
@@ -598,7 +844,8 @@ function resumeFromPause() {
    ============================================================ */
 function updateHud() {
   scoreEl.textContent = state.score;
-  livesEl.textContent = state.lives > 0 ? "♥".repeat(Math.min(state.lives, 6)) : "—";
+  // Vidas como número (sin corazones / emojis)
+  livesEl.textContent = Math.max(state.lives, 0);
   levelEl.textContent = state.level + 1;
   bestEl.textContent = Math.max(state.best, state.score);
 }
@@ -618,8 +865,8 @@ function saveBest() {
 /* ============================================================
    Overlays
    ============================================================ */
-function showOverlay({ emoji, title, text, primary, secondary }) {
-  ovEmoji.textContent = emoji;
+function showOverlay({ icon, title, text, primary, secondary }) {
+  ovIcon.innerHTML = OV_ICONS[icon] || "";
   ovTitle.textContent = title;
   ovText.textContent = text;
   ovPrimary.textContent = primary.label;
@@ -645,6 +892,8 @@ function render() {
   drawBricks();
   drawPowers();
   drawParticles();
+  drawLasers();
+  drawShield();
   drawPaddle();
   drawBalls();
 
@@ -679,6 +928,20 @@ function drawBricks() {
       ctx.textBaseline = "middle";
       ctx.fillText(String(br.hits), br.x + br.w / 2, br.y + br.h / 2 + 1);
     }
+    // indicador del ladrillo spawner: anillo + punto (suelta pelotas)
+    if (br.spawner) {
+      const cxp = br.x + br.w / 2, cyp = br.y + br.h / 2;
+      ctx.globalAlpha = 0.95;
+      ctx.strokeStyle = "#0b1020";
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.arc(cxp, cyp, 5.5, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = "#0b1020";
+      ctx.beginPath();
+      ctx.arc(cxp, cyp, 2.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
     ctx.restore();
   }
 }
@@ -701,10 +964,25 @@ function drawPaddle() {
   ctx.fillStyle = "#ffffff";
   roundRect(ctx, x + 4, y + 2, p.w - 8, PADDLE_H * 0.4, 4);
   ctx.fill();
+  // cañones cuando el láser está activo
+  if (state.t < state.laserUntil) {
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = "#fb7185";
+    ctx.shadowColor = "#fb7185";
+    ctx.shadowBlur = 10;
+    roundRect(ctx, x + 4, y - 5, 5, 6, 1.5);
+    ctx.fill();
+    roundRect(ctx, x + p.w - 9, y - 5, 5, 6, 1.5);
+    ctx.fill();
+  }
   ctx.restore();
 }
 
 function drawBalls() {
+  // Con PIERCE activo la bola es un "fireball" naranja
+  const pierce = state.t < state.pierceUntil;
+  const trailColor = pierce ? "#fb923c" : "#22d3ee";
+  const coreColor = pierce ? "#fff7ed" : "#eef2ff";
   for (const b of state.balls) {
     // Estela neón
     if (!reduceMotion()) {
@@ -713,7 +991,7 @@ function drawBalls() {
         const k = (i + 1) / b.trail.length;
         ctx.save();
         ctx.globalAlpha = 0.05 + k * 0.28;
-        ctx.fillStyle = "#22d3ee";
+        ctx.fillStyle = trailColor;
         ctx.beginPath();
         ctx.arc(tp.x, tp.y, b.r * (0.35 + k * 0.65), 0, Math.PI * 2);
         ctx.fill();
@@ -721,14 +999,43 @@ function drawBalls() {
       }
     }
     ctx.save();
-    ctx.shadowColor = "#22d3ee";
-    ctx.shadowBlur = 18;
-    ctx.fillStyle = "#eef2ff";
+    ctx.shadowColor = trailColor;
+    ctx.shadowBlur = pierce ? 24 : 18;
+    ctx.fillStyle = coreColor;
     ctx.beginPath();
     ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
+}
+
+/* Disparos del cañón láser */
+function drawLasers() {
+  if (!state.lasers.length) return;
+  ctx.save();
+  ctx.shadowColor = "#fb7185";
+  ctx.shadowBlur = 12;
+  ctx.fillStyle = "#fb7185";
+  for (const L of state.lasers) {
+    roundRect(ctx, L.x - 1.6, L.y - 14, 3.2, 14, 1.6);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+/* Escudo inferior: barra neón que rebota la bola */
+function drawShield() {
+  if (state.t >= state.shieldUntil) return;
+  // parpadea en los últimos 2 s para avisar de su fin
+  const remain = state.shieldUntil - state.t;
+  if (remain < 2 && Math.sin(state.t * 18) < 0) return;
+  ctx.save();
+  ctx.shadowColor = "#facc15";
+  ctx.shadowBlur = 16;
+  ctx.fillStyle = "rgba(250, 204, 21, 0.85)";
+  roundRect(ctx, 4, VH - 6, VW - 8, 4, 2);
+  ctx.fill();
+  ctx.restore();
 }
 
 function drawPowers() {
@@ -747,12 +1054,78 @@ function drawPowers() {
     roundRect(ctx, -pw.w / 2, -pw.h / 2, pw.w, pw.h, 8);
     ctx.stroke();
     ctx.shadowBlur = 0;
-    ctx.fillStyle = st.color;
-    ctx.font = "700 16px 'Space Grotesk', monospace";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(st.glyph, 0, 1);
+    drawPowerIcon(ctx, pw.type, st.color);
     ctx.restore();
+  }
+}
+
+/* Icono vectorial del power-up (sin emojis), centrado en (0,0) */
+function drawPowerIcon(c, type, color) {
+  c.strokeStyle = color;
+  c.fillStyle = color;
+  c.lineWidth = 2.2;
+  c.lineCap = "round";
+  c.lineJoin = "round";
+  if (type === "MULTI") {
+    // tres bolas
+    for (const [dx, dy] of [[0, -4], [-4, 3], [4, 3]]) {
+      c.beginPath();
+      c.arc(dx, dy, 2.6, 0, Math.PI * 2);
+      c.fill();
+    }
+  } else if (type === "WIDE") {
+    // flecha doble horizontal
+    c.beginPath(); c.moveTo(-7, 0); c.lineTo(7, 0); c.stroke();
+    c.beginPath();
+    c.moveTo(-7, 0); c.lineTo(-3.5, -3.2); c.moveTo(-7, 0); c.lineTo(-3.5, 3.2);
+    c.moveTo(7, 0); c.lineTo(3.5, -3.2); c.moveTo(7, 0); c.lineTo(3.5, 3.2);
+    c.stroke();
+  } else if (type === "SLOW") {
+    // onda
+    c.beginPath();
+    c.moveTo(-7, 0);
+    c.quadraticCurveTo(-3.5, -6, 0, 0);
+    c.quadraticCurveTo(3.5, 6, 7, 0);
+    c.stroke();
+  } else if (type === "LIFE") {
+    // cruz (salud / vida extra)
+    c.beginPath();
+    c.moveTo(0, -6); c.lineTo(0, 6);
+    c.moveTo(-6, 0); c.lineTo(6, 0);
+    c.stroke();
+  } else if (type === "LASER") {
+    // flecha hacia arriba (disparo)
+    c.beginPath();
+    c.moveTo(0, 6); c.lineTo(0, -6);
+    c.moveTo(0, -6); c.lineTo(-3.5, -2.5); c.moveTo(0, -6); c.lineTo(3.5, -2.5);
+    c.stroke();
+  } else if (type === "CATCH") {
+    // cuenco (atrapa la bola)
+    c.beginPath();
+    c.arc(0, 0, 6, 0, Math.PI, false);   // semicírculo abierto hacia arriba
+    c.stroke();
+    c.beginPath();
+    c.arc(0, -4, 2, 0, Math.PI * 2);      // la bola
+    c.fill();
+  } else if (type === "PIERCE") {
+    // llama (fireball)
+    c.beginPath();
+    c.moveTo(0, -7);
+    c.quadraticCurveTo(5, -1, 2, 4);
+    c.quadraticCurveTo(0, 7, -2, 4);
+    c.quadraticCurveTo(-5, -1, 0, -7);
+    c.fill();
+  } else if (type === "SHIELD") {
+    // escudo
+    c.beginPath();
+    c.moveTo(0, -7);
+    c.lineTo(6, -4);
+    c.lineTo(6, 2);
+    c.quadraticCurveTo(6, 6, 0, 8);
+    c.quadraticCurveTo(-6, 6, -6, 2);
+    c.lineTo(-6, -4);
+    c.closePath();
+    c.stroke();
   }
 }
 
@@ -881,6 +1254,9 @@ const breakBeep  = () => beep(660, 0.06, "square", 0.035);
 const crackBeep  = () => beep(300, 0.05, "sawtooth", 0.03);
 const wallBeep   = () => beep(240, 0.04, "sine", 0.025);
 const loseBeep   = () => beep(160, 0.25, "sine", 0.06);
+const catchBeep  = () => beep(520, 0.05, "sine", 0.04);
+const shieldBeep = () => beep(360, 0.06, "triangle", 0.04);
+const laserBeep  = () => beep(880, 0.03, "square", 0.02);
 function winBeep() {
   if (!state.soundOn) return;
   [523.25, 659.25, 783.99, 1046.5].forEach((f, i) =>
@@ -892,7 +1268,7 @@ function loadSoundPref() {
   reflectSoundUI();
 }
 function reflectSoundUI() {
-  soundToggle.textContent = state.soundOn ? "🔊" : "🔇";
+  soundToggle.innerHTML = state.soundOn ? SOUND_ON_SVG : SOUND_OFF_SVG;
   soundToggle.classList.toggle("is-muted", !state.soundOn);
   soundToggle.setAttribute("aria-pressed", String(state.soundOn));
 }
@@ -927,9 +1303,10 @@ stage.addEventListener("touchmove", (e) => {
   if (e.touches[0]) pointerMove(e.touches[0].clientX);
 }, { passive: false });
 
-/* Acción principal: lanzar bola (tap/clic en el campo) */
+/* Acción principal: lanzar bola al servir o soltar la bola atrapada por CATCH */
 function onPrimaryAction() {
   if (state.mode === "serve") launchBall();
+  else if (state.mode === "play" && state.balls.some((b) => b.stuck)) launchBall();
 }
 
 window.addEventListener("keydown", (e) => {
@@ -940,7 +1317,11 @@ window.addEventListener("keydown", (e) => {
     resumeAudio();
     if (state.mode === "serve") launchBall();
     else if (state.mode === "start") startGame();
-    else if (state.mode === "play" || state.mode === "paused") togglePause();
+    else if (state.mode === "play") {
+      // Si hay una bola pegada (CATCH) se lanza; si no, pausa
+      if (state.balls.some((b) => b.stuck)) launchBall();
+      else togglePause();
+    } else if (state.mode === "paused") togglePause();
   } else if (e.key === "p" || e.key === "P") {
     togglePause();
   }
@@ -966,9 +1347,11 @@ document.addEventListener("visibilitychange", () => {
   if (document.hidden && state.mode === "play") togglePause();
 });
 
-window.addEventListener("resize", resizeCanvas);
+window.addEventListener("resize", fitStage);
+window.addEventListener("orientationchange", fitStage);
 if (window.ResizeObserver) {
-  new ResizeObserver(resizeCanvas).observe(stage);
+  // Observa la región (no el lienzo) para evitar bucles de medición
+  new ResizeObserver(fitStage).observe(stageRegion);
 }
 
 /* ============================================================
@@ -980,9 +1363,9 @@ function init() {
   buildLevel(0);            // muestra un tablero de fondo bajo el overlay inicial
   state.balls = [newBall(true)];
   updateHud();
-  resizeCanvas();
+  fitStage();
   showOverlay({
-    emoji: "🧱",
+    icon: "start",
     title: "Neon Breaker",
     text: "Bounce the ball, smash every brick and catch power-ups. Move with mouse, touch or ← →.",
     primary: { label: "Play", onClick: () => { resumeAudio(); startGame(); } },
