@@ -10,3 +10,6 @@ Thumbs.db
 .playwright-mcp/
 *.log
 node_modules/
+
+# Claude Code (estado local: locks, etc.)
+.claude/
