@@ -48,6 +48,8 @@ const SPEED_PER_LEVEL = 22;       // incremento por nivel
 const SPEED_RAMP = 6;             // incremento gradual por ladrillo roto
 const MAX_BALLS = 8;
 const SLOW_FACTOR = 0.62;
+const TURBO_FACTOR = 1.6;       // Shift = turbo: multiplica la velocidad de la bola
+const TURBO_SCORE_MULT = 2;     // y los puntos valen x2 mientras el turbo está activo
 
 /* Power-ups */
 const POWER_FALL = 165;           // px/s de caída
@@ -236,6 +238,7 @@ const state = {
   wideUntil: 0,
   slowUntil: 0,
   slowActive: false,
+  turbo: false,         // turbo con Shift: bola más rápida y x2 puntos
   laserUntil: 0,        // cañón láser activo hasta este tiempo
   lastLaserFire: 0,
   catchUntil: 0,        // pala pegajosa
@@ -378,7 +381,7 @@ function newBall(stuck) {
 }
 
 function currentSpeed() {
-  return state.ballSpeed * (state.slowActive ? SLOW_FACTOR : 1);
+  return state.ballSpeed * (state.slowActive ? SLOW_FACTOR : 1) * (state.turbo ? TURBO_FACTOR : 1);
 }
 
 /* Renormaliza la velocidad de todas las bolas a la velocidad actual */
@@ -674,10 +677,11 @@ function hitBricks(b) {
 
 function damageBrick(br) {
   br.hits--;
-  state.score += 5;
+  const mult = state.turbo ? TURBO_SCORE_MULT : 1;
+  state.score += 5 * mult;
   if (br.hits <= 0) {
     br.alive = false;
-    state.score += 25;
+    state.score += 25 * mult;
     state.ballSpeed += SPEED_RAMP;          // la bola acelera al destruir
     if (br.power) dropPower(br.power, br.x + br.w / 2, br.y + br.h / 2);
     if (br.spawner) spawnBonusBalls(br.x + br.w / 2, br.y + br.h / 2, 2);
@@ -897,7 +901,21 @@ function render() {
   drawPaddle();
   drawBalls();
 
+  if (state.turbo && (state.mode === "play" || state.mode === "serve")) drawTurboBadge();
   if (state.mode === "serve") drawServeHint();
+}
+
+/* Indicador en pantalla del turbo (Shift): bola más rápida y x2 puntos */
+function drawTurboBadge() {
+  ctx.save();
+  ctx.font = "700 15px 'Space Grotesk', monospace";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  ctx.shadowColor = "#22d3ee";
+  ctx.shadowBlur = 12;
+  ctx.fillStyle = "#22d3ee";
+  ctx.fillText("TURBO  x2", VW / 2, 8);
+  ctx.restore();
 }
 
 function drawBricks() {
@@ -1324,11 +1342,21 @@ window.addEventListener("keydown", (e) => {
     } else if (state.mode === "paused") togglePause();
   } else if (e.key === "p" || e.key === "P") {
     togglePause();
+  } else if (e.key === "Shift") {
+    // Turbo: mantén Shift para que la bola vaya más rápida (y dé x2 puntos).
+    if (!state.turbo) { state.turbo = true; rescaleBalls(); }
   }
 });
 window.addEventListener("keyup", (e) => {
   if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") state.keyLeft = false;
   else if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") state.keyRight = false;
+  else if (e.key === "Shift") { state.turbo = false; rescaleBalls(); }
+});
+// Al perder el foco, suelta teclas y turbo para que no queden "pegados".
+window.addEventListener("blur", () => {
+  state.keyLeft = false;
+  state.keyRight = false;
+  if (state.turbo) { state.turbo = false; rescaleBalls(); }
 });
 
 function resumeAudio() {
