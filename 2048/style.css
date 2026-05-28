@@ -1,0 +1,438 @@
+:root {
+  --bg-0: #0b1020;
+  --bg-1: #131a33;
+  --ink: #eef2ff;
+  --ink-dim: #9aa6cc;
+  --accent: #7c5cff;
+  --accent-2: #22d3ee;
+  --accent-3: #f472b6;
+  --good: #34d399;
+  --radius: 18px;
+  --shadow: 0 20px 50px rgba(5, 8, 22, 0.55);
+  --gap: 12px;
+  /* duración de la animación de deslizamiento de fichas */
+  --slide: 130ms;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; }
+
+body {
+  font-family: "Sora", system-ui, -apple-system, sans-serif;
+  color: var(--ink);
+  background: var(--bg-0);
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ===== Enlace de regreso al arcade ===== */
+.back-link {
+  align-self: flex-start;
+  text-decoration: none;
+  color: var(--ink-dim);
+  font-family: "Sora", sans-serif;
+  font-weight: 600;
+  font-size: 0.88rem;
+  padding: 8px 13px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: color 160ms ease, border-color 160ms ease, transform 120ms ease;
+}
+.back-link:hover { color: var(--ink); border-color: rgba(255,255,255,0.24); }
+.back-link:active { transform: translateY(1px); }
+
+/* ===== Cabecera ===== */
+.head { text-align: center; }
+.title {
+  font-size: clamp(2.2rem, 9vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  font-family: "Space Grotesk", "Sora", sans-serif;
+}
+.title span { color: var(--accent-2); }
+.subtitle {
+  margin-top: 10px;
+  color: var(--ink-dim);
+  font-size: 0.92rem;
+}
+
+/* ===== HUD: marcador + nueva partida ===== */
+.hud {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 12px;
+}
+.scores {
+  display: flex;
+  gap: 12px;
+  flex: 1;
+}
+.stat {
+  position: relative; /* ancla del "+N" flotante */
+  flex: 1;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 10px 14px;
+  text-align: center;
+  backdrop-filter: blur(6px);
+  min-width: 92px;
+}
+.stat-label {
+  display: block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink-dim);
+}
+.stat-value {
+  display: block;
+  margin-top: 4px;
+  font-family: "Space Grotesk", monospace;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+/* Pulso del marcador al sumar puntos */
+.stat-value.bump { animation: bump 200ms ease; }
+@keyframes bump {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.18); color: var(--accent-2); }
+  100% { transform: scale(1); }
+}
+/* Indicador flotante "+N" que sube y se desvanece */
+.score-add {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 2px;
+  text-align: center;
+  font-family: "Space Grotesk", monospace;
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--accent-2);
+  pointer-events: none;
+  animation: scoreAdd 650ms ease-out forwards;
+}
+@keyframes scoreAdd {
+  0%   { opacity: 0; transform: translateY(4px); }
+  25%  { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-26px); }
+}
+
+/* ===== Barra de herramientas: modo + undo ===== */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+/* Selector de modo segmentado */
+.mode {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+}
+.mode-btn {
+  font-family: "Sora", sans-serif;
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: var(--ink-dim);
+  background: transparent;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: color 160ms ease, background 200ms ease, box-shadow 200ms ease;
+}
+.mode-btn:hover { color: var(--ink); }
+.mode-btn.is-active {
+  color: #fff;
+  background: var(--accent);
+  box-shadow: 0 6px 16px rgba(124, 92, 255, 0.35);
+}
+/* El modo Agujero Negro se ve como un vórtice oscuro al estar activo */
+#modeBlackhole.is-active {
+  background: radial-gradient(circle at 50% 50%, #05070f 0%, #1a1330 60%, #3a2a7a 100%);
+  box-shadow: 0 0 14px rgba(124, 92, 255, 0.5), inset 0 0 10px rgba(0,0,0,0.6);
+}
+/* Botón Undo: muestra los usos restantes */
+.btn-undo { font-size: 0.84rem; padding: 9px 16px; }
+.btn-undo:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ===== Tablero ===== */
+.board-wrap {
+  position: relative;
+  width: min(90vw, 480px);
+  margin: 0 auto;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius);
+  padding: var(--gap);
+  box-shadow: var(--shadow);
+  touch-action: none; /* evita el scroll de página al hacer swipe */
+}
+
+.board {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+}
+
+/* Rejilla de fondo: 16 celdas vacías */
+.grid-bg {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  gap: var(--gap);
+}
+.cell {
+  border-radius: 12px;
+  background: rgba(255,255,255,0.05);
+}
+
+/* Capa de fichas (posicionadas en absoluto sobre la rejilla) */
+.tile-layer {
+  position: absolute;
+  inset: 0;
+}
+
+.tile {
+  position: absolute;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-family: "Space Grotesk", monospace;
+  font-weight: 700;
+  line-height: 1;
+  background: #3a3f63;
+  color: var(--ink);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.25),
+    0 8px 18px rgba(7, 12, 30, 0.35);
+  transition:
+    left var(--slide) ease-in-out,
+    top  var(--slide) ease-in-out;
+  user-select: none;
+  -webkit-user-select: none;
+  font-size: clamp(1.5rem, 8.5vw, 2.5rem);
+  z-index: 1;
+}
+
+/* Rampa de color por valor (fondo · texto) */
+.tile[data-value="2"]    { background: #3a3f63; color: #eef2ff; }
+.tile[data-value="4"]    { background: #454b86; color: #eef2ff; }
+.tile[data-value="8"]    { background: #5a4fb0; color: #eef2ff; }
+.tile[data-value="16"]   { background: #6f4fd6; color: #eef2ff; }
+.tile[data-value="32"]   { background: #7c5cff; color: #ffffff; }
+.tile[data-value="64"]   { background: #9b6bff; color: #ffffff; }
+.tile[data-value="128"]  { background: #22d3ee; color: #06121a; }
+.tile[data-value="256"]  { background: #3fdaef; color: #06121a; }
+.tile[data-value="512"]  { background: #67e6f3; color: #06121a; }
+.tile[data-value="1024"] { background: #ffd166; color: #2a1d00; }
+.tile[data-value="2048"] { background: #ffb703; color: #2a1d00; }
+/* Más allá de 2048: dorado intenso con brillo */
+.tile.super {
+  background: #ffb703;
+  color: #2a1d00;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.4),
+    0 0 22px rgba(255, 183, 3, 0.55),
+    0 8px 18px rgba(7, 12, 30, 0.4);
+}
+
+/* Tamaños de fuente reducidos para números largos */
+.tile.len3 { font-size: clamp(1.2rem, 6.5vw, 2rem); }
+.tile.len4 { font-size: clamp(0.95rem, 5.2vw, 1.6rem); }
+
+/* Aparición de ficha nueva: espera a que terminen los deslizamientos
+   (delay = --slide) y usa fill 'backwards' para quedar invisible durante
+   la espera sin dejar transform residual que choque con el pop de fusión. */
+.tile.pop-in { animation: popIn 180ms ease var(--slide) backwards; }
+@keyframes popIn {
+  0%   { transform: scale(0); }
+  70%  { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+/* Pop al fusionar */
+.tile.merged {
+  z-index: 2;
+  animation: mergePop 160ms ease;
+}
+@keyframes mergePop {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+/* Ficha que desaparece tras una fusión (se desliza por debajo) */
+.tile.vanish { z-index: 0; }
+
+/* ===== Celda colapsada (modo Agujero Negro) ===== */
+/* Vórtice oscuro: las fichas no pueden entrar aquí */
+.vortex {
+  position: absolute;
+  border-radius: 12px;
+  overflow: hidden;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 50% 50%,
+      #03040b 0%, #07091a 36%, #160f2e 68%, rgba(124,92,255,0.28) 100%);
+  box-shadow:
+    inset 0 0 22px rgba(0,0,0,0.92),
+    0 0 16px rgba(124, 92, 255, 0.4);
+}
+/* Remolino giratorio del vórtice */
+.vortex::before {
+  content: "";
+  position: absolute;
+  inset: -30%;
+  background: conic-gradient(from 0deg,
+    transparent 0deg, rgba(124,92,255,0.5) 80deg,
+    transparent 170deg, rgba(34,211,238,0.42) 260deg, transparent 360deg);
+  animation: swirl 3.2s linear infinite;
+  mix-blend-mode: screen;
+}
+/* Núcleo negro central */
+.vortex::after {
+  content: "";
+  position: absolute;
+  inset: 32%;
+  border-radius: 50%;
+  background: radial-gradient(circle, #01020a 45%, transparent 72%);
+}
+.vortex.collapse { animation: collapseIn 440ms cubic-bezier(.2,.8,.2,1); }
+@keyframes swirl { to { transform: rotate(360deg); } }
+@keyframes collapseIn {
+  0%   { transform: scale(1.55); opacity: 0; }
+  55%  { opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Canvas de efectos de fusión (supernovas) — sobre las fichas */
+.fx {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 4;
+}
+
+/* Canvas de confeti — cubre el tablero */
+.confetti {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* ===== Overlay de victoria / derrota ===== */
+.overlay[hidden] { display: none; }
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(8, 11, 26, 0.6);
+  backdrop-filter: blur(8px);
+  border-radius: var(--radius);
+  animation: fade 280ms ease;
+  z-index: 6;
+}
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+.overlay-card {
+  text-align: center;
+  padding: 28px 26px;
+  background: #1a2240;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  max-width: 88%;
+}
+.overlay-emoji { font-size: 3rem; }
+.overlay-card h2 {
+  margin: 6px 0 8px;
+  font-size: 1.7rem;
+  color: var(--accent-2);
+}
+.overlay-card p { color: var(--ink-dim); margin-bottom: 18px; }
+.overlay-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+/* ===== Botones ===== */
+.btn {
+  font-family: "Sora", sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 11px 20px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: transform 120ms ease, filter 160ms ease, border-color 160ms ease;
+  white-space: nowrap;
+}
+.btn:active { transform: translateY(1px) scale(0.98); }
+.btn-primary {
+  color: #fff;
+  background: var(--accent);
+  box-shadow: 0 8px 20px rgba(124, 92, 255, 0.35);
+}
+.btn-primary:hover { filter: brightness(1.06); }
+.btn-ghost {
+  color: var(--ink);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.btn-ghost:hover { border-color: rgba(255,255,255,0.28); }
+
+/* ===== Pista ===== */
+.hint {
+  text-align: center;
+  color: var(--ink-dim);
+  font-size: 0.82rem;
+}
+
+@media (max-width: 380px) {
+  .stat-value { font-size: 1.2rem; }
+  .btn { padding: 11px 14px; }
+}
+
+/* Respeta la preferencia de movimiento reducido */
+@media (prefers-reduced-motion: reduce) {
+  .tile { transition: none; }
+  .tile.pop-in, .tile.merged, .stat-value.bump { animation: none; }
+  .vortex::before { animation: none; }
+  .vortex.collapse { animation: none; }
+}

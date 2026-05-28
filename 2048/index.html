@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>2048 · Join the tiles</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <main class="app">
+    <a class="back-link" href="../index.html" aria-label="Back to Arcade">← Arcade</a>
+
+    <header class="head">
+      <h1 class="title">20<span>48</span></h1>
+      <p class="subtitle">Join the tiles — reach 2048!</p>
+    </header>
+
+    <!-- Marcador y botón de reinicio -->
+    <div class="hud">
+      <div class="scores">
+        <div class="stat">
+          <span class="stat-label">Score</span>
+          <span class="stat-value" id="score" aria-live="polite">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Best</span>
+          <span class="stat-value" id="best">0</span>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="newGame">New game</button>
+    </div>
+
+    <!-- Barra de herramientas: selector de modo + deshacer -->
+    <div class="toolbar">
+      <div class="mode" role="group" aria-label="Game mode">
+        <button class="mode-btn is-active" id="modeClassic" type="button" aria-pressed="true">Classic</button>
+        <button class="mode-btn" id="modeBlackhole" type="button" aria-pressed="false">Black Hole</button>
+      </div>
+      <button class="btn btn-ghost btn-undo" id="undo" type="button" aria-label="Undo last move" disabled>↶ Undo (3)</button>
+    </div>
+
+    <!-- Tablero: rejilla de fondo + capa de fichas -->
+    <div class="board-wrap">
+      <div class="board" id="board" role="grid" aria-label="2048 board">
+        <div class="grid-bg" id="gridBg" aria-hidden="true"></div>
+        <div class="tile-layer" id="tileLayer"></div>
+      </div>
+      <canvas class="fx" id="fx" aria-hidden="true"></canvas>
+      <canvas class="confetti" id="confetti" aria-hidden="true"></canvas>
+
+      <!-- Overlay reutilizado para victoria y derrota -->
+      <div class="overlay" id="overlay" hidden>
+        <div class="overlay-card">
+          <div class="overlay-emoji" id="ovEmoji">🎉</div>
+          <h2 id="ovTitle">You win!</h2>
+          <p id="ovMsg">You reached 2048</p>
+          <div class="overlay-actions">
+            <button class="btn btn-ghost" id="keepGoing">Keep going</button>
+            <button class="btn btn-primary" id="restart">New game</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="hint">Arrow keys · WASD · swipe · U to undo</p>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
