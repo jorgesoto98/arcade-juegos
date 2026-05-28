@@ -29,21 +29,24 @@
         radial-gradient(140% 90% at 50% -10%, rgba(124, 92, 255, 0.16), transparent 55%),
         radial-gradient(120% 80% at 50% 120%, rgba(34, 211, 238, 0.10), transparent 55%),
         var(--bg-0);
-      min-height: 100dvh;
-      display: grid;
-      place-items: center;
-      padding: 14px 14px 22px;
-      overflow-x: hidden;
+      height: 100dvh;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      padding: 8px 12px;
+      overflow: hidden; /* todo cabe en el viewport, sin scroll */
       -webkit-tap-highlight-color: transparent;
     }
 
     .app {
       width: 100%;
-      max-width: 420px;
+      max-width: 440px;
+      height: 100%;
       display: flex;
       flex-direction: column;
       align-items: stretch;
-      gap: 12px;
+      gap: 8px;
+      min-height: 0; /* permite que .stage-wrap encoja para encajar */
     }
 
     /* ===== Back-link al hub ===== */
@@ -52,8 +55,8 @@
       text-decoration: none;
       color: var(--ink-dim);
       font-weight: 600;
-      font-size: 0.86rem;
-      padding: 7px 12px;
+      font-size: 0.82rem;
+      padding: 5px 11px;
       border-radius: 10px;
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255, 255, 255, 0.08);
@@ -62,16 +65,16 @@
     .back-link:hover { color: var(--ink); border-color: rgba(255, 255, 255, 0.24); }
     .back-link:active { transform: translateY(1px); }
 
-    /* ===== Cabecera ===== */
+    /* ===== Cabecera (compacta para caber en el viewport) ===== */
     .head { text-align: center; }
     .title {
-      font-size: clamp(1.8rem, 7vw, 2.4rem);
+      font-size: clamp(1.4rem, 5.5vw, 2rem);
       font-weight: 800;
       letter-spacing: -0.02em;
       line-height: 1;
     }
     .title span { color: var(--accent-2); margin-left: 0.18em; }
-    .subtitle { margin-top: 6px; color: var(--ink-dim); font-size: 0.84rem; }
+    .subtitle { margin-top: 3px; color: var(--ink-dim); font-size: 0.78rem; }
 
     /* ===== HUD ===== */
     .hud {
@@ -123,11 +126,17 @@
     }
 
     /* ===== Tablero ===== */
+    /* Contenedor flexible: ocupa el alto restante; el tablero se ajusta dentro. */
+    .stage-wrap {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
     .stage {
       position: relative;
-      width: min(92vw, calc(72vh * 0.6), 380px);
-      aspect-ratio: 360 / 600;
-      margin: 0 auto;
+      /* tamaño asignado por JS (fitStage) manteniendo la proporción 360:600 */
       border-radius: var(--radius);
       border: 2px solid rgba(255, 255, 255, 0.10);
       overflow: hidden;
@@ -159,6 +168,7 @@
       backdrop-filter: blur(8px);
       animation: fade 260ms ease;
       padding: 16px;
+      overflow: auto; /* si el tablero queda bajo, el overlay hace scroll interno */
     }
     @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 
@@ -172,16 +182,23 @@
       max-width: 300px;
       width: 100%;
     }
-    .over-emoji { font-size: 2.6rem; filter: drop-shadow(0 4px 12px rgba(124, 92, 255, 0.6)); }
+    /* Icono decorativo (SVG inline, sin emojis) */
+    .over-emoji {
+      display: flex;
+      justify-content: center;
+      filter: drop-shadow(0 4px 12px rgba(124, 92, 255, 0.6));
+    }
+    .over-emoji svg { width: 52px; height: 52px; display: block; }
     .over-card h2 { margin: 8px 0 4px; font-size: 1.45rem; color: var(--accent-2); }
     .over-card .over-sub { color: var(--ink-dim); font-size: 0.84rem; margin-bottom: 8px; }
 
     .star-row { display: flex; justify-content: center; gap: 8px; margin: 10px 0 16px; }
     .star-row .s {
-      font-size: 1.7rem;
+      display: flex;
       filter: grayscale(1) opacity(0.35);
       transition: filter 240ms ease, transform 240ms ease;
     }
+    .star-row .s svg { width: 26px; height: 26px; display: block; }
     .star-row .s.on { filter: none; transform: scale(1.12); }
 
     .over-actions { display: flex; flex-direction: column; gap: 8px; }
@@ -214,8 +231,18 @@
     .level-cell:hover:not(:disabled) { transform: translateY(-3px); border-color: rgba(124, 92, 255, 0.7); }
     .level-cell:active:not(:disabled) { transform: translateY(0); }
     .level-cell:disabled { opacity: 0.4; cursor: not-allowed; }
-    .level-cell .lc-stars { font-size: 0.62rem; letter-spacing: 1px; color: #ffd95e; min-height: 0.8em; }
-    .level-cell .lc-lock { font-size: 1.1rem; }
+    .level-cell .lc-stars {
+      font-size: 0.62rem;
+      letter-spacing: 0.5px;
+      color: #ffd95e;
+      min-height: 0.9em;
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+    }
+    .level-cell .lc-stars svg { width: 11px; height: 11px; display: block; }
+    .level-cell .lc-lock { display: flex; color: var(--ink-dim); }
+    .level-cell .lc-lock svg { width: 18px; height: 18px; display: block; }
 
     /* ===== Controles ===== */
     .controls { display: flex; align-items: center; gap: 10px; }
@@ -246,8 +273,7 @@
     .btn-ghost:hover { border-color: rgba(255, 255, 255, 0.28); }
 
     .icon-btn {
-      font-size: 1.15rem;
-      line-height: 1;
+      line-height: 0;
       width: 46px;
       height: 46px;
       flex: 0 0 auto;
@@ -262,11 +288,12 @@
     }
     .icon-btn:hover { border-color: rgba(255, 255, 255, 0.24); }
     .icon-btn.is-muted { opacity: 0.5; }
+    .icon-btn svg { width: 20px; height: 20px; display: block; }
 
     .hint {
       text-align: center;
       color: var(--ink-dim);
-      font-size: 0.78rem;
+      font-size: 0.76rem;
     }
   </style>
 </head>
@@ -291,39 +318,41 @@
       </div>
     </section>
 
-    <div class="stage">
-      <canvas id="game" role="img" aria-label="Astro Drop play area — tap the glowing ropes to cut them and guide the meteor into the black hole"></canvas>
+    <div class="stage-wrap">
+      <div class="stage">
+        <canvas id="game" role="img" aria-label="Astro Drop play area — tap the glowing ropes to cut them and guide the meteor into the black hole"></canvas>
 
-      <!-- Selección de nivel -->
-      <div class="overlay" id="levelSelect" hidden role="dialog" aria-label="Select level">
-        <div class="over-card">
-          <div class="over-emoji" aria-hidden="true">🌌</div>
-          <h2>Astro Drop</h2>
-          <p class="over-sub">Pick a level</p>
-          <div class="level-grid" id="levelGrid"></div>
-        </div>
-      </div>
-
-      <!-- Resultado (victoria / derrota) -->
-      <div class="overlay" id="result" hidden role="dialog" aria-label="Level result">
-        <div class="over-card">
-          <div class="over-emoji" id="resultEmoji" aria-hidden="true">🌀</div>
-          <h2 id="resultTitle">Captured!</h2>
-          <p class="over-sub" id="resultSub">Stars collected</p>
-          <div class="star-row" id="resultStars" aria-hidden="true">
-            <span class="s">★</span><span class="s">★</span><span class="s">★</span>
+        <!-- Selección de nivel -->
+        <div class="overlay" id="levelSelect" hidden role="dialog" aria-label="Select level">
+          <div class="over-card">
+            <div class="over-emoji" aria-hidden="true">
+              <svg viewBox="0 0 48 48"><ellipse cx="24" cy="24" rx="20" ry="8" fill="none" stroke="#22d3ee" stroke-width="2.5" opacity="0.85"/><circle cx="24" cy="24" r="8" fill="#0b1020" stroke="#7c5cff" stroke-width="2.5"/></svg>
+            </div>
+            <h2>Astro Drop</h2>
+            <p class="over-sub">Pick a level</p>
+            <div class="level-grid" id="levelGrid"></div>
           </div>
-          <div class="over-actions">
-            <button class="btn btn-primary" id="nextBtn">Next level</button>
-            <button class="btn btn-ghost" id="replayBtn">Replay</button>
-            <button class="btn btn-ghost" id="resultLevelsBtn">Levels</button>
+        </div>
+
+        <!-- Resultado (victoria / derrota) -->
+        <div class="overlay" id="result" hidden role="dialog" aria-label="Level result">
+          <div class="over-card">
+            <div class="over-emoji" id="resultEmoji" aria-hidden="true"></div>
+            <h2 id="resultTitle">Captured!</h2>
+            <p class="over-sub" id="resultSub">Stars collected</p>
+            <div class="star-row" id="resultStars" aria-hidden="true"></div>
+            <div class="over-actions">
+              <button class="btn btn-primary" id="nextBtn">Next level</button>
+              <button class="btn btn-ghost" id="replayBtn">Replay</button>
+              <button class="btn btn-ghost" id="resultLevelsBtn">Levels</button>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
     <section class="controls">
-      <button class="icon-btn" id="soundToggle" aria-label="Toggle sound" title="Sound">🔊</button>
+      <button class="icon-btn" id="soundToggle" aria-label="Toggle sound" title="Sound"></button>
       <button class="btn btn-ghost" id="levelsBtn">Levels</button>
       <button class="btn btn-ghost" id="restart">Restart</button>
     </section>
@@ -434,9 +463,21 @@
     const MR = CONFIG.meteorRadius;
     const NUM_LEVELS = CONFIG.levels.length;
 
+    /* ===== Iconos SVG inline (sin emojis) ===== */
+    const ICON = {
+      soundOn:  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3z" fill="currentColor"/><path d="M16 8.2a4.2 4.2 0 0 1 0 7.6M18.8 5.6a8 8 0 0 1 0 12.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+      soundOff: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3z" fill="currentColor"/><path d="M16 9l5 6M21 9l-5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+      win:  '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 6a18 18 0 1 1-12.7 5.3" fill="none" stroke="#7c5cff" stroke-width="2.5" stroke-linecap="round"/><circle cx="24" cy="24" r="9" fill="#0b1020" stroke="#22d3ee" stroke-width="2.5"/><circle cx="24" cy="24" r="3" fill="#22d3ee"/></svg>',
+      lose: '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="30" cy="18" r="7" fill="#7c6a5a" stroke="#ffd9a0" stroke-width="2"/><path d="M8 40 L22 26 M14 41 L27 31 M7 33 L18 25" fill="none" stroke="#ff8a3c" stroke-width="2.5" stroke-linecap="round"/></svg>',
+      lock: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2" fill="currentColor"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
+      star: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 18.4 6.1 20.5l1.2-6.5L2.5 9.4l6.6-.9z" fill="#ffd95e"/></svg>',
+    };
+
     /* ===== Referencias del DOM ===== */
     const canvas       = document.getElementById("game");
     const ctx          = canvas.getContext("2d");
+    const stageEl      = document.querySelector(".stage");
+    const stageWrapEl  = document.querySelector(".stage-wrap");
     const titleEl      = document.getElementById("title");
     const levelNumEl   = document.getElementById("levelNum");
     const levelNameEl  = document.getElementById("levelName");
@@ -569,11 +610,35 @@
       }
     })();
 
-    /* ===== Lienzo: resolución por DPR, render en unidades del mundo ===== */
+    /* ===== Lienzo: el tablero se ajusta al alto disponible sin scroll =====
+     * fitStage mide el espacio del contenedor (.stage-wrap), calcula la mayor
+     * caja con proporción 360:600 que cabe, fija el tamaño CSS de .stage y
+     * adapta el bitmap del canvas (nitidez por DPR) re-escalando el contexto
+     * para seguir dibujando en unidades del mundo (0..W, 0..H). */
     const DPR = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = W * DPR;
-    canvas.height = H * DPR;
-    ctx.scale(DPR, DPR);
+    function fitStage() {
+      const availW = stageWrapEl.clientWidth;
+      const availH = stageWrapEl.clientHeight;
+      if (availW <= 0 || availH <= 0) return;
+      const ratio = W / H; // 0.6
+      let cssW = availW;
+      let cssH = cssW / ratio;
+      if (cssH > availH) { cssH = availH; cssW = cssH * ratio; }
+      stageEl.style.width = cssW + "px";
+      stageEl.style.height = cssH + "px";
+      // El canvas llena el interior del tablero (descontando el borde de 2px).
+      const cr = canvas.getBoundingClientRect();
+      const bw = Math.max(1, Math.round(cr.width * DPR));
+      const bh = Math.max(1, Math.round(cr.height * DPR));
+      if (canvas.width !== bw || canvas.height !== bh) {
+        canvas.width = bw;
+        canvas.height = bh;
+      }
+      // Mapea el mundo (W x H) al bitmap actual del canvas.
+      ctx.setTransform(canvas.width / W, 0, 0, canvas.height / H, 0, 0);
+    }
+    window.addEventListener("resize", fitStage);
+    window.addEventListener("orientationchange", fitStage);
 
     /* ===== Gravedad orbital: atracción central hacia el agujero negro ===== */
     Events.on(engine, "beforeUpdate", function () {
@@ -787,7 +852,7 @@
     function showResult(won) {
       const hasNext = state.levelIndex + 1 <= NUM_LEVELS - 1;
       if (won) {
-        resultEmoji.textContent = "🌀";
+        resultEmoji.innerHTML = ICON.win;
         resultTitle.textContent = "Captured!";
         resultSub.textContent = state.starsTotal > 0
           ? ("Stars " + state.starsCollected + " / " + state.starsTotal)
@@ -797,7 +862,7 @@
         nextBtn.hidden = !hasNext;
         replayBtn.textContent = "Replay";
       } else {
-        resultEmoji.textContent = "💥";
+        resultEmoji.innerHTML = ICON.lose;
         resultTitle.textContent = "Lost in space";
         resultSub.textContent = "The meteor drifted away";
         resultStars.hidden = true;
@@ -813,7 +878,7 @@
       for (let i = 0; i < state.starsTotal; i++) {
         const span = document.createElement("span");
         span.className = "s" + (i < state.starsCollected ? " on" : "");
-        span.textContent = "★";
+        span.innerHTML = ICON.star;
         resultStars.appendChild(span);
       }
     }
@@ -1226,12 +1291,12 @@
         if (!unlocked) {
           const lock = document.createElement("span");
           lock.className = "lc-lock";
-          lock.textContent = "🔒";
+          lock.innerHTML = ICON.lock;
           cell.appendChild(lock);
         } else {
           const best = bestStars[i] || 0;
           const total = CONFIG.levels[i].stars.length;
-          starsLine.textContent = total > 0 ? ("★" + best + "/" + total) : "";
+          starsLine.innerHTML = total > 0 ? (ICON.star + best + "/" + total) : "";
           cell.appendChild(starsLine);
         }
         cell.addEventListener("click", function () {
@@ -1247,6 +1312,12 @@
       state.phase = "menu";
     }
 
+    // Refleja el estado de sonido en el botón (icono SVG, sin emoji).
+    function setSoundIcon() {
+      soundBtn.innerHTML = state.muted ? ICON.soundOff : ICON.soundOn;
+      soundBtn.classList.toggle("is-muted", state.muted);
+    }
+
     /* ===== Botones ===== */
     levelsBtn.addEventListener("click", openLevelSelect);
     resultLevelsBtn.addEventListener("click", openLevelSelect);
@@ -1255,8 +1326,7 @@
     nextBtn.addEventListener("click", function () { loadLevel(state.levelIndex + 1); });
     soundBtn.addEventListener("click", function () {
       state.muted = !state.muted;
-      soundBtn.textContent = state.muted ? "🔇" : "🔊";
-      soundBtn.classList.toggle("is-muted", state.muted);
+      setSoundIcon();
       try { localStorage.setItem(CONFIG.muteKey, state.muted ? "1" : "0"); } catch (e) {}
     });
 
@@ -1272,12 +1342,10 @@
       document.title = CONFIG.title + " · Cosmic physics puzzle";
 
       loadSaved();
-      soundBtn.textContent = state.muted ? "🔇" : "🔊";
-      soundBtn.classList.toggle("is-muted", state.muted);
+      setSoundIcon();
 
-      // Sprite del meteorito recargado para refrescar la preview si llega tarde.
-      meteorImg.onload = function () {};
-      bhImg.onload = function () {};
+      // Ajusta el tablero al espacio disponible antes del primer frame.
+      fitStage();
 
       openLevelSelect();
       requestAnimationFrame(loop);
