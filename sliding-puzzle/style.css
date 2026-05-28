@@ -21,11 +21,14 @@ body {
   font-family: "Sora", system-ui, -apple-system, sans-serif;
   color: var(--ink);
   background: var(--bg-0);
-  min-height: 100dvh;
-  display: grid;
-  place-items: center;
-  padding: 24px 16px;
-  overflow-x: hidden;
+  /* Alto exacto del viewport (svh/dvh) para que TODO quepa sin scroll */
+  height: 100svh;
+  height: 100dvh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 14px 16px;
+  overflow: hidden; /* nada de scroll: el tablero se escala para caber */
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -34,9 +37,11 @@ body {
 .app {
   width: 100%;
   max-width: 460px;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 12px;
+  min-height: 0; /* permite que los hijos flexibles encojan */
 }
 
 .back-link {
@@ -55,9 +60,9 @@ body {
 .back-link:hover { color: var(--ink); border-color: rgba(255,255,255,0.24); }
 .back-link:active { transform: translateY(1px); }
 
-.head { text-align: center; }
+.head { text-align: center; flex: none; }
 .title {
-  font-size: clamp(2rem, 8vw, 2.8rem);
+  font-size: clamp(1.5rem, 5.5vw, 2.1rem);
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1;
@@ -67,15 +72,23 @@ body {
   margin-left: 0.15em;
 }
 .subtitle {
-  margin-top: 10px;
+  margin-top: 6px;
   color: var(--ink-dim);
-  font-size: 0.92rem;
+  font-size: 0.84rem;
+}
+.back-link { flex: none; }
+/* Oculta el subtítulo en pantallas bajas para ganar alto vertical */
+@media (max-height: 640px) {
+  .subtitle { display: none; }
 }
 
 /* ===== Start menu ===== */
 .menu {
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  justify-content: center; /* centra el menú en el espacio disponible */
   gap: 18px;
   align-items: center;
   padding: 8px 0;
@@ -159,13 +172,16 @@ body {
 
 /* ===== Game view ===== */
 .game {
+  flex: 1 1 auto;
+  min-height: 0; /* clave: deja que el área del tablero encoja para caber */
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 14px;
 }
 
 /* HUD */
 .hud {
+  flex: none;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
@@ -194,6 +210,16 @@ body {
 }
 
 /* Board */
+/* Área flexible que ocupa el alto sobrante y centra el tablero cuadrado.
+   El lado del tablero lo calcula JS = min(ancho, alto) disponibles. */
+.board-area {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .board-wrap {
   position: relative;
   background: rgba(255,255,255,0.04);
@@ -205,8 +231,9 @@ body {
 
 .board {
   position: relative;
-  width: 100%;
-  aspect-ratio: 1 / 1;
+  /* Tamaño definido por JS (fitBoard); este es solo un respaldo inicial. */
+  width: 300px;
+  height: 300px;
   --gap: 10px;
 }
 
@@ -307,6 +334,10 @@ body {
 .win-overlay {
   position: absolute;
   inset: 0;
+  /* Por encima de las fichas (z-index 2) y la capa fantasma (1), por debajo
+     del confeti (5) para que este caiga al frente. Sin este z-index el card
+     "Solved!" queda DETRÁS de las fichas y resulta ilegible. */
+  z-index: 4;
   display: grid;
   place-items: center;
   background: rgba(8, 11, 26, 0.55);
@@ -317,13 +348,19 @@ body {
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 .win-card {
   text-align: center;
-  padding: 28px 26px;
+  max-width: 92%;
+  padding: clamp(16px, 5%, 28px) clamp(14px, 5%, 26px);
   background: #1a2240;
   border: 1px solid rgba(255,255,255,0.14);
   border-radius: 18px;
   box-shadow: var(--shadow);
 }
-.win-emoji { font-size: 3rem; }
+.win-emoji { color: #fbbf24; line-height: 0; }
+.win-emoji svg { width: clamp(40px, 14vw, 56px); height: clamp(40px, 14vw, 56px); }
+.win-emoji:empty { display: none; }
+
+/* Íconos SVG de los botones (reemplazan a los emojis) */
+.icon-btn svg { width: 20px; height: 20px; display: block; }
 .win-stars {
   font-size: 1.8rem;
   letter-spacing: 0.15em;
@@ -341,6 +378,7 @@ body {
 
 /* Controles */
 .controls {
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: center;

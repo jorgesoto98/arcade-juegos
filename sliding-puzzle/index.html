@@ -38,7 +38,7 @@
       </div>
       <div class="menu-actions">
         <button class="btn btn-primary btn-lg" id="startBtn">Start</button>
-        <button class="btn btn-ghost btn-lg" id="dailyBtn">🗓️ Daily Challenge</button>
+        <button class="btn btn-ghost btn-lg" id="dailyBtn">Daily Challenge</button>
       </div>
       <p class="menu-hint">Daily — same scramble for everyone today</p>
     </section>
@@ -61,26 +61,28 @@
         </div>
       </div>
 
-      <div class="board-wrap">
-        <div class="board" id="board"></div>
-        <canvas class="confetti" id="confetti" aria-hidden="true"></canvas>
-        <div class="win-overlay" id="winOverlay" hidden>
-          <div class="win-card">
-            <div class="win-emoji" id="winEmoji">🎉</div>
-            <div class="win-stars" id="winStars" aria-hidden="true"></div>
-            <h2 id="winTitle">Solved!</h2>
-            <p id="winStats">—</p>
-            <div class="win-actions">
-              <button class="btn btn-ghost" id="winMenu">Change size</button>
-              <button class="btn btn-primary" id="winPlayAgain">Play again</button>
+      <div class="board-area">
+        <div class="board-wrap">
+          <div class="board" id="board"></div>
+          <canvas class="confetti" id="confetti" aria-hidden="true"></canvas>
+          <div class="win-overlay" id="winOverlay" hidden>
+            <div class="win-card">
+              <div class="win-emoji" id="winEmoji" aria-hidden="true"></div>
+              <div class="win-stars" id="winStars" aria-hidden="true"></div>
+              <h2 id="winTitle">Solved!</h2>
+              <p id="winStats">—</p>
+              <div class="win-actions">
+                <button class="btn btn-ghost" id="winMenu">Change size</button>
+                <button class="btn btn-primary" id="winPlayAgain">Play again</button>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       <section class="controls">
-        <button class="icon-btn" id="soundToggle" aria-label="Toggle sound" title="Sound">🔊</button>
-        <button class="icon-btn" id="ghostToggle" aria-label="Toggle record ghost" title="Record ghost" aria-pressed="true">👻</button>
+        <button class="icon-btn" id="soundToggle" aria-label="Toggle sound" title="Sound"></button>
+        <button class="icon-btn" id="ghostToggle" aria-label="Toggle record ghost" title="Record ghost" aria-pressed="true"></button>
         <button class="btn btn-ghost" id="solve">Solve</button>
         <button class="btn btn-ghost" id="shuffle">Shuffle</button>
       </section>

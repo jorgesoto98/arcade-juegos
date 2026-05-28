@@ -60,6 +60,34 @@ const ghost = {
   timer: null,       // setTimeout en curso
 };
 
+/* ---------- Íconos SVG inline (sin emojis) ----------
+   Stroke en currentColor para heredar el color del botón/contenedor. */
+const ICONS = {
+  // Altavoz con ondas (sonido activo)
+  soundOn:
+    '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 6a8 8 0 0 1 0 12"/></svg>',
+  // Altavoz tachado (silencio)
+  soundOff:
+    '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M11 5 6 9H3v6h3l5 4z"/><line x1="16" y1="9" x2="22" y2="15"/><line x1="22" y1="9" x2="16" y2="15"/></svg>',
+  // Fantasma (toggle del replay del récord)
+  ghost:
+    '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M5 21v-9a7 7 0 0 1 14 0v9l-3-2-2 2-2-2-2 2-3-2z"/>' +
+    '<circle cx="9.5" cy="11" r="1" fill="currentColor" stroke="none"/><circle cx="14.5" cy="11" r="1" fill="currentColor" stroke="none"/></svg>',
+  // Trofeo (victoria normal)
+  win:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0z"/>' +
+    '<path d="M7 5H4v2a3 3 0 0 0 3 3"/><path d="M17 5h3v2a3 3 0 0 1-3 3"/></svg>',
+  // Chip/CPU (resuelto por la máquina)
+  auto:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<rect x="7" y="7" width="10" height="10" rx="2"/>' +
+    '<path d="M10 3v2M14 3v2M10 19v2M14 19v2M3 10h2M3 14h2M19 10h2M19 14h2"/></svg>',
+};
+
 /* ---------- Utilidades de coordenadas ---------- */
 const idx  = (r, c) => r * state.n + c;
 const rowOf = (i) => Math.floor(i / state.n);
@@ -148,6 +176,25 @@ function tileMetrics() {
   const size = `calc((100% - ${(n - 1)} * var(--gap)) / ${n})`;
   const step = `((100% - ${(n - 1)} * var(--gap)) / ${n} + var(--gap))`;
   return { size, step };
+}
+
+/* Escala el tablero a un cuadrado = min(ancho, alto) disponibles dentro de
+   .board-area, descontando el padding/borde del marco. Así el título, HUD,
+   tablero y controles caben siempre en el viewport sin scroll. */
+function fitBoard() {
+  const area = boardEl.closest(".board-area");
+  const wrap = boardEl.parentElement; // .board-wrap (marco con padding + borde)
+  if (!area || !wrap) return;
+  const cs = getComputedStyle(wrap);
+  const chrome =
+    parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) +
+    parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth);
+  const side = Math.max(80, Math.floor(Math.min(
+    area.clientWidth - chrome,
+    area.clientHeight - chrome,
+  )));
+  boardEl.style.width = side + "px";
+  boardEl.style.height = side + "px";
 }
 
 function buildBoard() {
@@ -324,6 +371,7 @@ function loadGhostPref() {
   reflectGhostUI();
 }
 function reflectGhostUI() {
+  ghostToggle.innerHTML = ICONS.ghost;
   ghostToggle.classList.toggle("is-muted", !ghost.on);
   ghostToggle.setAttribute("aria-pressed", String(ghost.on));
 }
@@ -396,7 +444,7 @@ function loadSoundPref() {
   reflectSoundUI();
 }
 function reflectSoundUI() {
-  soundToggle.textContent = state.soundOn ? "🔊" : "🔇";
+  soundToggle.innerHTML = state.soundOn ? ICONS.soundOn : ICONS.soundOff;
   soundToggle.classList.toggle("is-muted", !state.soundOn);
   soundToggle.setAttribute("aria-pressed", String(state.soundOn));
 }
@@ -604,7 +652,7 @@ function checkWin() {
 
   if (state.autoSolved) {
     // Resuelto por el botón Solve: sin récord ni estrellas.
-    winEmoji.textContent = "🤖";
+    winEmoji.innerHTML = ICONS.auto;
     winTitle.textContent = "Auto-solved";
     winStars.innerHTML = "";
     winStats.textContent = "Solved by the computer";
@@ -615,7 +663,7 @@ function checkWin() {
   const stars = starsFor(state.n, state.moves);
   const record = saveBestIfBetter(state.moves, secs);
 
-  winEmoji.textContent = "🎉";
+  winEmoji.innerHTML = ICONS.win;
   winTitle.textContent = "Solved!";
   renderStars(stars);
   const comboTxt = state.maxCombo > 1 ? ` · max combo ×${state.maxCombo}` : "";
@@ -821,6 +869,7 @@ function beginGame(mode) {
   buildBoard();
   menuEl.hidden = true;
   gameEl.hidden = false;
+  fitBoard(); // dimensiona el tablero al espacio disponible (ya visible)
   applyScramble(mode === "daily" ? mulberry32(dailySeed()) : Math.random);
   loadBest();
   updateModeUI();
@@ -833,7 +882,7 @@ function updateModeUI() {
   modeBadge.hidden = !daily;
   if (daily) {
     const label = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" });
-    modeBadge.textContent = `🗓️ Daily · ${label}`;
+    modeBadge.textContent = `Daily · ${label}`;
   }
   // En diario, "Shuffle" reinicia el MISMO puzzle → se etiqueta "Restart".
   shuffleBtn.textContent = daily ? "Restart" : "Shuffle";
@@ -864,7 +913,7 @@ ghostToggle.addEventListener("click", toggleGhost);
 
 // Reposiciona al cambiar el tamaño de la ventana (los porcentajes ya son
 // responsive; forzamos repintado por si el navegador lo necesita).
-window.addEventListener("resize", () => { positionTiles(); positionGhost(); });
+window.addEventListener("resize", () => { fitBoard(); positionTiles(); positionGhost(); });
 
 /* ---------- Arranque ---------- */
 function init() {
