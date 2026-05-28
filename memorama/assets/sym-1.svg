@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Símbolo 1: control / gamepad -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Game controller">
+  <defs>
+    <linearGradient id="pad-body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8b6dff"/>
+      <stop offset="1" stop-color="#5b3fd6"/>
+    </linearGradient>
+  </defs>
+  <path d="M22 22 H42 C51 22 58 29 58 38 C58 45 53 49 47 49 C42 49 40 45 37 43 H27 C24 45 22 49 17 49 C11 49 6 45 6 38 C6 29 13 22 22 22 Z"
+        fill="url(#pad-body)" stroke="#c9bcff" stroke-width="1.5"/>
+  <!-- D-pad -->
+  <rect x="13" y="34" width="13" height="4" rx="2" fill="#0b1020"/>
+  <rect x="17.5" y="29.5" width="4" height="13" rx="2" fill="#0b1020"/>
+  <!-- Botones -->
+  <circle cx="44" cy="33" r="3" fill="#22d3ee"/>
+  <circle cx="50" cy="39" r="3" fill="#ff5d8f"/>
+</svg>

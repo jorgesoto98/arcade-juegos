@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Símbolo 6: rayo -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Lightning bolt">
+  <defs>
+    <linearGradient id="bolt-fill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff27a"/>
+      <stop offset="1" stop-color="#ffb300"/>
+    </linearGradient>
+  </defs>
+  <path d="M37 6 L17 35 L29 35 L25 58 L48 27 L35 27 Z"
+        fill="url(#bolt-fill)" stroke="#e08a00" stroke-width="2" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,494 @@
+:root {
+  --bg-0: #0b1020;
+  --bg-1: #131a33;
+  --ink: #eef2ff;
+  --ink-dim: #9aa6cc;
+  --accent: #7c5cff;
+  --accent-2: #22d3ee;
+  --accent-3: #f472b6;
+  --good: #34d399;
+  --radius: 18px;
+  --shadow: 0 20px 50px rgba(5, 8, 22, 0.55);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; }
+
+body {
+  font-family: "Sora", system-ui, -apple-system, sans-serif;
+  color: var(--ink);
+  background: var(--bg-0);
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app {
+  width: 100%;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.back-link {
+  align-self: flex-start;
+  text-decoration: none;
+  color: var(--ink-dim);
+  font-family: "Sora", sans-serif;
+  font-weight: 600;
+  font-size: 0.88rem;
+  padding: 8px 13px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: color 160ms ease, border-color 160ms ease, transform 120ms ease;
+}
+.back-link:hover { color: var(--ink); border-color: rgba(255,255,255,0.24); }
+.back-link:active { transform: translateY(1px); }
+
+.head { text-align: center; }
+.title {
+  font-size: clamp(2rem, 8vw, 2.8rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.title span {
+  color: var(--accent-2);
+  margin-left: 0.1em;
+}
+.subtitle {
+  margin-top: 10px;
+  color: var(--ink-dim);
+  font-size: 0.92rem;
+}
+
+/* ===== Start menu ===== */
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  align-items: center;
+  padding: 8px 0;
+}
+.menu[hidden], .game[hidden] { display: none; }
+.menu-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--ink-dim);
+  letter-spacing: 0.01em;
+}
+.menu-sizes {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  width: 100%;
+}
+.size-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 22px 10px;
+  border-radius: 16px;
+  cursor: pointer;
+  color: var(--ink);
+  background: rgba(255,255,255,0.05);
+  border: 2px solid rgba(255,255,255,0.08);
+  transition: border-color 160ms ease, background 160ms ease, transform 120ms ease;
+  font-family: "Sora", sans-serif;
+}
+.size-card:hover { transform: translateY(-3px); border-color: rgba(255,255,255,0.22); }
+.size-card.is-active {
+  border-color: var(--accent-2);
+  background: rgba(34, 211, 238, 0.10);
+}
+.size-dim {
+  font-family: "Space Grotesk", monospace;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+.size-tag {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink-dim);
+}
+.btn-lg {
+  width: 100%;
+  padding: 15px 20px;
+  font-size: 1.05rem;
+  border-radius: 14px;
+}
+
+/* ===== Toggle de Modo Pulso (switch accesible) ===== */
+.menu-options { width: 100%; }
+.switch {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  text-align: left;
+  padding: 14px 16px;
+  border-radius: 14px;
+  cursor: pointer;
+  color: var(--ink);
+  background: rgba(255,255,255,0.05);
+  border: 2px solid rgba(255,255,255,0.08);
+  font-family: "Sora", sans-serif;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+.switch:hover { border-color: rgba(255,255,255,0.22); }
+.switch.is-on {
+  border-color: var(--accent);
+  background: rgba(124, 92, 255, 0.10);
+}
+.switch:focus-visible {
+  outline: none;
+  border-color: var(--accent-2);
+  box-shadow: 0 0 0 2px var(--accent-2);
+}
+.switch-track {
+  flex: 0 0 auto;
+  width: 46px;
+  height: 26px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.14);
+  border: 1px solid rgba(255,255,255,0.12);
+  position: relative;
+  transition: background 160ms ease;
+}
+.switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--ink);
+  box-shadow: 0 2px 6px rgba(5, 8, 22, 0.5);
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.switch.is-on .switch-track { background: var(--accent); }
+.switch.is-on .switch-thumb { transform: translateX(20px); }
+.switch-info { display: flex; flex-direction: column; gap: 2px; }
+.switch-name { font-weight: 600; font-size: 0.95rem; }
+.switch-desc { font-size: 0.76rem; color: var(--ink-dim); }
+
+/* ===== Game view ===== */
+.game {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* HUD */
+.hud {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.stat {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 12px 10px;
+  text-align: center;
+  backdrop-filter: blur(6px);
+}
+.stat-label {
+  display: block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink-dim);
+}
+.stat-value {
+  display: block;
+  margin-top: 6px;
+  font-family: "Space Grotesk", monospace;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+/* Board */
+.board-wrap {
+  position: relative;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius);
+  padding: 12px;
+  box-shadow: var(--shadow);
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* Easy 2×4 y Classic 4×4 comparten 4 columnas */
+  gap: 10px;
+}
+
+/* ===== Carta con volteo 3D ===== */
+.card {
+  position: relative;
+  border: none;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  aspect-ratio: 1 / 1;
+  perspective: 900px;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: transform 120ms ease;
+}
+.card:disabled { cursor: default; }
+
+/* Contenedor que rota; las dos caras viven dentro de él.
+   display:block es OBLIGATORIO: al ser un <span> (inline) ignoraría
+   width/height y colapsaría a 0×0, dejando la carta invisible. */
+.card-inner {
+  display: block;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 380ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+/* Boca abajo se ve el reverso; al voltear (o emparejar) gira 180° y se ve la cara */
+.card.is-flipped .card-inner,
+.card.is-matched .card-inner {
+  transform: rotateY(180deg);
+}
+
+.card-back,
+.card-face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  overflow: hidden;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.18),
+    0 8px 18px rgba(7, 12, 30, 0.40);
+}
+
+/* Reverso: visible al inicio (sin rotación) */
+.card-back {
+  background: linear-gradient(160deg, rgba(124,92,255,0.25), rgba(34,211,238,0.18));
+}
+/* Cara con el símbolo: oculta al inicio (girada 180°) */
+.card-face {
+  transform: rotateY(180deg);
+  background: rgba(255,255,255,0.07);
+}
+
+.card-back img,
+.card-face img {
+  width: 72%;
+  height: 72%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Microinteracciones: el scale va en .card (el botón) y la rotación 3D en
+   .card-inner, así nunca compiten ni provocan un volteo accidental al pulsar.
+   El hover se limita a punteros reales para que en móvil no quede "pegado". */
+@media (hover: hover) {
+  .card:not(:disabled):hover { transform: scale(0.97); }
+}
+.card:not(:disabled):active { transform: scale(0.93); }
+.card:focus-visible { outline: none; }
+.card:focus-visible .card-back,
+.card:focus-visible .card-face {
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.2),
+    0 0 0 2px var(--accent-2),
+    0 8px 18px rgba(7, 12, 30, 0.40);
+}
+
+/* Par emparejado: cara resaltada en verde y deshabilitada */
+.card.is-matched .card-face {
+  background: rgba(52, 211, 153, 0.16);
+  border-color: rgba(52, 211, 153, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.25),
+    0 0 0 2px rgba(52, 211, 153, 0.45),
+    0 8px 18px rgba(7, 12, 30, 0.40);
+  animation: matchPop 360ms ease;
+}
+@keyframes matchPop {
+  0% { transform: rotateY(180deg) scale(1); }
+  45% { transform: rotateY(180deg) scale(1.07); }
+  100% { transform: rotateY(180deg) scale(1); }
+}
+
+/* Par que NO coincide: anillo de aviso + sacudida antes de volver a ocultarse.
+   La sacudida mantiene rotateY(180deg) porque es la cara visible al estar volteada. */
+.card.is-wrong .card-face {
+  border-color: rgba(244, 114, 182, 0.65);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.2),
+    0 0 0 2px rgba(244, 114, 182, 0.55),
+    0 8px 18px rgba(7, 12, 30, 0.40);
+  animation: shake 380ms ease;
+}
+@keyframes shake {
+  0%, 100% { transform: rotateY(180deg) translateX(0); }
+  20% { transform: rotateY(180deg) translateX(-5px); }
+  40% { transform: rotateY(180deg) translateX(5px); }
+  60% { transform: rotateY(180deg) translateX(-4px); }
+  80% { transform: rotateY(180deg) translateX(4px); }
+}
+
+/* ===== Ping sonar: anillo concéntrico que emana de la carta acertada =====
+   Se crea por JS sobre .board-wrap, centrado en cada carta del par.
+   z-index 4 → encima de las cartas pero debajo del confeti (5) y overlay (6). */
+.sonar {
+  position: absolute;
+  border-radius: 50%;
+  border: 2px solid var(--accent-2);
+  box-shadow: 0 0 14px rgba(34, 211, 238, 0.6);
+  pointer-events: none;
+  z-index: 4;
+  transform: translate(-50%, -50%) scale(0.55);
+  animation: sonar 720ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes sonar {
+  0%   { transform: translate(-50%, -50%) scale(0.55); opacity: 0.85; }
+  100% { transform: translate(-50%, -50%) scale(2.6);  opacity: 0; }
+}
+
+/* Canvas de confeti — cubre el tablero, encima del overlay */
+.confetti {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Overlay de victoria */
+.win-overlay[hidden] { display: none; }
+.win-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(8, 11, 26, 0.55);
+  backdrop-filter: blur(8px);
+  border-radius: var(--radius);
+  animation: fade 280ms ease;
+  z-index: 6;
+}
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+.win-card {
+  text-align: center;
+  padding: 28px 26px;
+  background: #1a2240;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  margin: 12px;
+}
+.win-emoji { font-size: 3rem; }
+.win-stars {
+  font-size: 1.8rem;
+  letter-spacing: 0.15em;
+  margin: 4px 0 2px;
+  filter: drop-shadow(0 2px 6px rgba(124, 92, 255, 0.5));
+}
+.win-stars .star-on { color: #fbbf24; }
+.win-stars .star-off { color: rgba(255,255,255,0.22); }
+.win-card h2 {
+  margin: 6px 0 8px;
+  font-size: 1.7rem;
+  color: var(--accent-2);
+}
+.win-card p { color: var(--ink-dim); margin-bottom: 18px; }
+
+/* Controles */
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.controls .btn { flex: 1; }
+.icon-btn {
+  font-size: 1.1rem;
+  line-height: 1;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  cursor: pointer;
+  color: var(--ink);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: all 160ms ease;
+}
+.icon-btn:hover { border-color: rgba(255,255,255,0.22); }
+.icon-btn.is-muted { opacity: 0.5; }
+
+.btn {
+  font-family: "Sora", sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 11px 20px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: transform 120ms ease, filter 160ms ease;
+}
+.btn:active { transform: translateY(1px) scale(0.98); }
+.btn-primary {
+  color: #fff;
+  background: var(--accent);
+  box-shadow: 0 8px 20px rgba(124, 92, 255, 0.35);
+}
+.btn-primary:hover { filter: brightness(1.06); }
+.btn-ghost {
+  color: var(--ink);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.btn-ghost:hover { border-color: rgba(255,255,255,0.28); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* Acciones del overlay de victoria */
+.win-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+@media (max-width: 380px) {
+  .board { gap: 8px; }
+  .board-wrap { padding: 8px; } /* más espacio para la rejilla Classic 4×4 */
+  .stat-value { font-size: 1.15rem; }
+  .controls { flex-wrap: wrap; }
+}
+
+/* Respeta la preferencia de movimiento reducido */
+@media (prefers-reduced-motion: reduce) {
+  .card-inner { transition-duration: 1ms; }
+  .card.is-matched .card-face,
+  .card.is-wrong .card-face { animation: none; }
+  .sonar { display: none; }
+  .switch-thumb { transition-duration: 1ms; }
+}

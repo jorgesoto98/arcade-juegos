@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Símbolo 4: corazón -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Heart">
+  <defs>
+    <linearGradient id="heart-fill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff7eb3"/>
+      <stop offset="1" stop-color="#ff2e74"/>
+    </linearGradient>
+  </defs>
+  <path d="M32 54 C12 40 8 27 8 21 C8 13 14 8 21 8 C26 8 30 11 32 15 C34 11 38 8 43 8 C50 8 56 13 56 21 C56 27 52 40 32 54 Z"
+        fill="url(#heart-fill)" stroke="#c01356" stroke-width="2"/>
+  <!-- Brillo -->
+  <path d="M20 16 C17 18 16 21 16 24" fill="none" stroke="#ffd0e2" stroke-width="3" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Símbolo 8: fantasma -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Ghost">
+  <defs>
+    <linearGradient id="ghost-fill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#c7d0f0"/>
+    </linearGradient>
+  </defs>
+  <path d="M12 30 C12 17 21 8 32 8 C43 8 52 17 52 30 L52 54 L44 48 L38 54 L32 48 L26 54 L20 48 L12 54 Z"
+        fill="url(#ghost-fill)" stroke="#8a93bf" stroke-width="2" stroke-linejoin="round"/>
+  <!-- Ojos -->
+  <ellipse cx="25" cy="28" rx="4" ry="5" fill="#3a2db5"/>
+  <ellipse cx="39" cy="28" rx="4" ry="5" fill="#3a2db5"/>
+  <circle cx="26.5" cy="26.5" r="1.4" fill="#ffffff"/>
+  <circle cx="40.5" cy="26.5" r="1.4" fill="#ffffff"/>
+  <!-- Mejillas -->
+  <circle cx="20" cy="36" r="3" fill="#ff9ec4" opacity="0.7"/>
+  <circle cx="44" cy="36" r="3" fill="#ff9ec4" opacity="0.7"/>
+</svg>
