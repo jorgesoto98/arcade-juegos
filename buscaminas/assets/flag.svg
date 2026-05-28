@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Bandera: asta + bandera triangular -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Flag">
+  <defs>
+    <linearGradient id="flag-fill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff5d6c"/>
+      <stop offset="1" stop-color="#e01e37"/>
+    </linearGradient>
+  </defs>
+  <!-- Base / peana -->
+  <rect x="16" y="52" width="32" height="6" rx="3" fill="#2c3240"/>
+  <rect x="22" y="46" width="20" height="8" rx="2" fill="#3a4150"/>
+  <!-- Asta -->
+  <rect x="30" y="8" width="4" height="42" rx="2" fill="#1f2530"/>
+  <!-- Bandera triangular -->
+  <path d="M34 9 L54 19 L34 29 Z" fill="url(#flag-fill)" stroke="#a3132a" stroke-width="1.2" stroke-linejoin="round"/>
+  <!-- Brillo en la punta del asta -->
+  <circle cx="32" cy="8" r="2.5" fill="#22d3ee"/>
+</svg>

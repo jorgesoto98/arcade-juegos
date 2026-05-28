@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Minesweeper · Find the mines</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <main class="app">
+    <a class="back-link" href="../index.html" aria-label="Back to Arcade">← Arcade</a>
+    <header class="head">
+      <h1 class="title">Mine<span>sweeper</span></h1>
+      <p class="subtitle">Clear the field without hitting a mine</p>
+    </header>
+
+    <!-- ===== Menú inicial: elegir dificultad ===== -->
+    <section class="menu" id="menu">
+      <h2 class="menu-title">Choose your difficulty</h2>
+      <div class="menu-sizes" role="group" aria-label="Difficulty">
+        <button class="size-card is-active" data-dif="beginner">
+          <span class="size-dim">9 × 9</span>
+          <span class="size-mines">10 mines</span>
+          <span class="size-tag">Beginner</span>
+        </button>
+        <button class="size-card" data-dif="intermediate">
+          <span class="size-dim">16 × 16</span>
+          <span class="size-mines">40 mines</span>
+          <span class="size-tag">Intermediate</span>
+        </button>
+        <button class="size-card" data-dif="expert">
+          <span class="size-dim">16 × 30</span>
+          <span class="size-mines">99 mines</span>
+          <span class="size-tag">Expert</span>
+        </button>
+      </div>
+      <button class="btn btn-primary btn-lg" id="startBtn">Start</button>
+    </section>
+
+    <!-- ===== Vista de juego ===== -->
+    <section class="game" id="game" hidden>
+      <div class="hud">
+        <div class="stat">
+          <span class="stat-label">Mines</span>
+          <span class="stat-value" id="minesLeft">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Time</span>
+          <span class="stat-value" id="time">0:00</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Best</span>
+          <span class="stat-value" id="best">—</span>
+        </div>
+      </div>
+
+      <div class="board-wrap">
+        <div class="board-scroll" id="boardScroll">
+          <div class="board" id="board" role="grid" aria-label="Minesweeper board"></div>
+        </div>
+        <canvas class="confetti" id="confetti" aria-hidden="true"></canvas>
+        <!-- Aviso del resultado del Escáner (power-up) -->
+        <div class="scan-toast" id="scanToast" role="status" aria-live="polite" hidden></div>
+        <div class="end-overlay" id="endOverlay" hidden>
+          <div class="end-card">
+            <div class="end-emoji" id="endEmoji">🎉</div>
+            <h2 id="endTitle">You win!</h2>
+            <p id="endStats">—</p>
+            <div class="end-actions">
+              <button class="btn btn-ghost" id="endMenu">Change</button>
+              <button class="btn btn-primary" id="endAgain">Play again</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <section class="controls">
+        <button class="icon-btn" id="soundToggle" aria-label="Toggle sound" title="Sound">🔊</button>
+        <button class="btn btn-scan" id="scanBtn" aria-pressed="false" title="Scanner power-up (1 use)"
+                aria-label="Scanner power-up: arm it, then tap a flagged cell to reveal if it hides a mine. One use per game.">
+          <span class="scan-icon" aria-hidden="true">🔍</span>
+          <span class="scan-label">Scanner</span>
+          <span class="scan-badge" aria-hidden="true">1</span>
+        </button>
+        <button class="btn btn-flag" id="flagToggle" aria-pressed="false" aria-label="Toggle flag mode">
+          <img src="assets/flag.svg" alt="" aria-hidden="true" class="btn-flag-icon" />
+          <span>Flag mode</span>
+        </button>
+        <button class="btn btn-ghost" id="newGame">New game</button>
+      </section>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
