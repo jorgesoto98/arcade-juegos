@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Neon Breaker · Brick-smashing arcade</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <main class="app">
+    <a class="back-link" href="../index.html" aria-label="Back to Arcade">← Arcade</a>
+
+    <header class="head">
+      <h1 class="title">Neon<span>Breaker</span></h1>
+      <p class="subtitle">Smash every glowing brick — move with mouse, touch or ← →</p>
+    </header>
+
+    <!-- ===== HUD ===== -->
+    <div class="hud">
+      <div class="stat">
+        <span class="stat-label">Score</span>
+        <span class="stat-value" id="score">0</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Lives</span>
+        <span class="stat-value" id="lives">♥♥♥</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Level</span>
+        <span class="stat-value" id="level">1</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Best</span>
+        <span class="stat-value" id="best">0</span>
+      </div>
+    </div>
+
+    <!-- ===== Play field ===== -->
+    <div class="stage-wrap" id="stageWrap">
+      <canvas class="stage" id="stage" aria-label="Neon Breaker play field" role="img"></canvas>
+      <canvas class="fx" id="fx" aria-hidden="true"></canvas>
+
+      <!-- Overlay genérico (start / level clear / game over / win) -->
+      <div class="overlay" id="overlay" hidden>
+        <div class="overlay-card">
+          <div class="overlay-emoji" id="ovEmoji">🧱</div>
+          <h2 class="overlay-title" id="ovTitle">Neon Breaker</h2>
+          <p class="overlay-text" id="ovText">—</p>
+          <div class="overlay-actions">
+            <button class="btn btn-ghost" id="ovSecondary" hidden>Menu</button>
+            <button class="btn btn-primary" id="ovPrimary">Play</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Controles ===== -->
+    <section class="controls">
+      <button class="icon-btn" id="soundToggle" aria-label="Toggle sound" title="Sound">🔊</button>
+      <button class="btn btn-ghost" id="pauseBtn">Pause</button>
+      <button class="btn btn-ghost" id="restartBtn">Restart</button>
+    </section>
+
+    <p class="legend" aria-hidden="true">
+      <span><b style="color:#22d3ee">✦</b> Multiball</span>
+      <span><b style="color:#7c5cff">↔</b> Wide</span>
+      <span><b style="color:#34d399">≈</b> Slow</span>
+      <span><b style="color:#f472b6">♥</b> Life</span>
+    </p>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
