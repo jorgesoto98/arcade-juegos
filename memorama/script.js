@@ -82,6 +82,12 @@ function buildBoard() {
   boardEl.innerHTML = "";
   state.cardEls = [];
 
+  // Fija columnas/filas para el aspect-ratio de respaldo (siempre 4 columnas).
+  const cols = 4;
+  const rows = Math.ceil(state.deck.length / cols);
+  boardEl.style.setProperty("--cols", cols);
+  boardEl.style.setProperty("--rows", rows);
+
   state.deck.forEach((symbol, i) => {
     const card = document.createElement("button");
     card.className = "card";
@@ -102,6 +108,30 @@ function buildBoard() {
     boardEl.appendChild(card);
     state.cardEls.push(card);
   });
+
+  fitBoard(); // ajusta el tamaño del tablero al espacio disponible
+}
+
+/* ---------- Ajuste del tablero al viewport ----------
+   Calcula el lado de carta más grande que cabe en .board-wrap limitando por
+   min(ancho, alto), de modo que Classic 4×4 se vea completo sin scroll. */
+function fitBoard() {
+  if (gameEl.hidden || !state.cardEls.length) return;
+  const cols = 4;
+  const rows = Math.ceil(state.cardEls.length / cols);
+  const wrapCS = getComputedStyle(boardWrap);
+  const padX = parseFloat(wrapCS.paddingLeft) + parseFloat(wrapCS.paddingRight);
+  const padY = parseFloat(wrapCS.paddingTop) + parseFloat(wrapCS.paddingBottom);
+  const availW = boardWrap.clientWidth - padX;
+  const availH = boardWrap.clientHeight - padY;
+  if (availW <= 0 || availH <= 0) return;
+  const gap = parseFloat(getComputedStyle(boardEl).gap) || 10;
+  // Lado de carta limitado por ancho y por alto → se toma el menor
+  const cellW = (availW - (cols - 1) * gap) / cols;
+  const cellH = (availH - (rows - 1) * gap) / rows;
+  const cell = Math.max(0, Math.min(cellW, cellH));
+  boardEl.style.width = `${cell * cols + (cols - 1) * gap}px`;
+  boardEl.style.height = `${cell * rows + (rows - 1) * gap}px`;
 }
 
 /* ---------- Interacción ---------- */
@@ -264,7 +294,7 @@ function checkWin() {
   const stars = starsFor(state.difficulty, state.tries);
   const record = saveBestIfBetter(state.tries, secs);
 
-  winEmoji.textContent = "🎉";
+  // El icono de victoria es un SVG estático en el HTML (sin emojis).
   winTitle.textContent = "You win!";
   renderStars(stars);
   winStats.textContent =
@@ -342,8 +372,18 @@ function loadSoundPref() {
   state.soundOn = localStorage.getItem("memorama.sound") !== "off";
   reflectSoundUI();
 }
+/* Iconos SVG inline para el botón de sonido (sin emojis, heredan currentColor) */
+const SOUND_ON_SVG =
+  '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M11 5 6 9H3v6h3l5 4z" /><path d="M15.5 8.5a5 5 0 0 1 0 7" /><path d="M18.5 6a9 9 0 0 1 0 12" />' +
+  '</svg>';
+const SOUND_OFF_SVG =
+  '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M11 5 6 9H3v6h3l5 4z" /><line x1="16" y1="9" x2="22" y2="15" /><line x1="22" y1="9" x2="16" y2="15" />' +
+  '</svg>';
+
 function reflectSoundUI() {
-  soundToggle.textContent = state.soundOn ? "🔊" : "🔇";
+  soundToggle.innerHTML = state.soundOn ? SOUND_ON_SVG : SOUND_OFF_SVG;
   soundToggle.classList.toggle("is-muted", !state.soundOn);
   soundToggle.setAttribute("aria-pressed", String(state.soundOn));
 }
@@ -523,6 +563,9 @@ winAgain.addEventListener("click", dealAndMaybePeek);
 winMenu.addEventListener("click", showMenu);
 soundToggle.addEventListener("click", toggleSound);
 pulseToggle.addEventListener("click", togglePulse);
+// Reajusta el tablero cuando cambia el tamaño o la orientación
+window.addEventListener("resize", fitBoard);
+window.addEventListener("orientationchange", fitBoard);
 
 /* ---------- Arranque ---------- */
 function init() {

@@ -19,20 +19,23 @@ body {
   font-family: "Sora", system-ui, -apple-system, sans-serif;
   color: var(--ink);
   background: var(--bg-0);
-  min-height: 100dvh;
-  display: grid;
-  place-items: center;
-  padding: 24px 16px;
-  overflow-x: hidden;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: clamp(10px, 2.4vmin, 22px);
+  overflow: hidden; /* todo cabe en el viewport: sin scroll */
   -webkit-tap-highlight-color: transparent;
 }
 
 .app {
   width: 100%;
   max-width: 460px;
+  flex: 1;
+  min-height: 0; /* permite que el tablero encoja para caber en el alto */
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: clamp(10px, 2vmin, 18px);
 }
 
 .back-link {
@@ -53,7 +56,7 @@ body {
 
 .head { text-align: center; }
 .title {
-  font-size: clamp(2rem, 8vw, 2.8rem);
+  font-size: clamp(1.5rem, 5vmin, 2.2rem);
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1;
@@ -63,18 +66,19 @@ body {
   margin-left: 0.1em;
 }
 .subtitle {
-  margin-top: 10px;
+  margin-top: 6px;
   color: var(--ink-dim);
-  font-size: 0.92rem;
+  font-size: clamp(0.78rem, 2.2vmin, 0.92rem);
 }
 
 /* ===== Start menu ===== */
 .menu {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: clamp(12px, 2.4vmin, 18px);
   align-items: center;
   padding: 8px 0;
+  margin: auto 0; /* centra el menú en el espacio vertical libre */
 }
 .menu[hidden], .game[hidden] { display: none; }
 .menu-title {
@@ -182,9 +186,11 @@ body {
 
 /* ===== Game view ===== */
 .game {
+  flex: 1;
+  min-height: 0; /* clave: deja que .board-wrap absorba el alto disponible */
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: clamp(10px, 1.8vmin, 18px);
 }
 
 /* HUD */
@@ -197,7 +203,7 @@ body {
   background: rgba(255,255,255,0.05);
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 14px;
-  padding: 12px 10px;
+  padding: clamp(8px, 1.4vmin, 12px) 10px;
   text-align: center;
   backdrop-filter: blur(6px);
 }
@@ -219,17 +225,31 @@ body {
 /* Board */
 .board-wrap {
   position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: rgba(255,255,255,0.04);
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: var(--radius);
-  padding: 12px;
+  padding: clamp(8px, 1.6vmin, 12px);
   box-shadow: var(--shadow);
 }
 
+/* Siempre 4 columnas; --cols/--rows los fija el JS según dificultad.
+   El JS (fitBoard) ajusta width/height en px para caber por min(ancho, alto);
+   aspect-ratio queda como respaldo visual hasta que ese cálculo se aplica. */
 .board {
   display: grid;
-  grid-template-columns: repeat(4, 1fr); /* Easy 2×4 y Classic 4×4 comparten 4 columnas */
-  gap: 10px;
+  grid-template-columns: repeat(var(--cols, 4), 1fr);
+  grid-auto-rows: 1fr;
+  gap: clamp(6px, 1.4vmin, 10px);
+  width: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  margin: auto;
+  aspect-ratio: var(--cols, 4) / var(--rows, 4);
 }
 
 /* ===== Carta con volteo 3D ===== */
@@ -240,7 +260,9 @@ body {
   margin: 0;
   background: transparent;
   cursor: pointer;
-  aspect-ratio: 1 / 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0; /* el tamaño lo marca la celda de la rejilla (fitBoard) */
   perspective: 900px;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
@@ -403,7 +425,12 @@ body {
   box-shadow: var(--shadow);
   margin: 12px;
 }
-.win-emoji { font-size: 3rem; }
+.win-emoji { color: var(--accent-2); line-height: 0; }
+.win-emoji svg {
+  width: clamp(2.4rem, 8vmin, 3rem);
+  height: clamp(2.4rem, 8vmin, 3rem);
+  filter: drop-shadow(0 4px 10px rgba(34, 211, 238, 0.4));
+}
 .win-stars {
   font-size: 1.8rem;
   letter-spacing: 0.15em;
@@ -426,7 +453,7 @@ body {
   justify-content: center;
   gap: 10px;
 }
-.controls .btn { flex: 1; }
+.controls .btn { flex: 1; min-width: 0; }
 .icon-btn {
   font-size: 1.1rem;
   line-height: 1;
@@ -442,6 +469,7 @@ body {
   border: 1px solid rgba(255,255,255,0.08);
   transition: all 160ms ease;
 }
+.icon-btn svg { display: block; width: 20px; height: 20px; }
 .icon-btn:hover { border-color: rgba(255,255,255,0.22); }
 .icon-btn.is-muted { opacity: 0.5; }
 
@@ -478,10 +506,9 @@ body {
 }
 
 @media (max-width: 380px) {
-  .board { gap: 8px; }
-  .board-wrap { padding: 8px; } /* más espacio para la rejilla Classic 4×4 */
   .stat-value { font-size: 1.15rem; }
-  .controls { flex-wrap: wrap; }
+  /* Botones más estrechos en pantallas chicas para no envolver (sin sumar alto) */
+  .controls .btn { padding: 11px 12px; font-size: 0.82rem; }
 }
 
 /* Respeta la preferencia de movimiento reducido */
