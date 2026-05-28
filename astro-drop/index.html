@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Astro Drop · Cosmic physics puzzle</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ===== Tokens visuales compartidos del arcade ===== */
+    :root {
+      --bg-0: #0b1020;
+      --ink: #eef2ff;
+      --ink-dim: #9aa6cc;
+      --accent: #7c5cff;
+      --accent-2: #22d3ee;
+      --radius: 18px;
+      --shadow: 0 24px 60px rgba(4, 7, 20, 0.6);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+
+    body {
+      font-family: "Sora", system-ui, -apple-system, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(140% 90% at 50% -10%, rgba(124, 92, 255, 0.16), transparent 55%),
+        radial-gradient(120% 80% at 50% 120%, rgba(34, 211, 238, 0.10), transparent 55%),
+        var(--bg-0);
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: 14px 14px 22px;
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+    }
+
+    /* ===== Back-link al hub ===== */
+    .back-link {
+      align-self: flex-start;
+      text-decoration: none;
+      color: var(--ink-dim);
+      font-weight: 600;
+      font-size: 0.86rem;
+      padding: 7px 12px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: color 160ms ease, border-color 160ms ease, transform 120ms ease;
+    }
+    .back-link:hover { color: var(--ink); border-color: rgba(255, 255, 255, 0.24); }
+    .back-link:active { transform: translateY(1px); }
+
+    /* ===== Cabecera ===== */
+    .head { text-align: center; }
+    .title {
+      font-size: clamp(1.8rem, 7vw, 2.4rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+    .title span { color: var(--accent-2); margin-left: 0.18em; }
+    .subtitle { margin-top: 6px; color: var(--ink-dim); font-size: 0.84rem; }
+
+    /* ===== HUD ===== */
+    .hud {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: stretch;
+      gap: 10px;
+    }
+    .stat {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 9px 8px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .stat-label {
+      font-size: 0.64rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--ink-dim);
+    }
+    .stat-value {
+      margin-top: 3px;
+      font-family: "Space Grotesk", monospace;
+      font-size: 1.35rem;
+      font-weight: 700;
+    }
+    .stat-value.bump { animation: bump 220ms ease; }
+    @keyframes bump {
+      0% { transform: scale(1); }
+      45% { transform: scale(1.22); color: var(--accent-2); }
+      100% { transform: scale(1); }
+    }
+    .level-name {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 16px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      font-weight: 700;
+      font-size: 0.92rem;
+      color: var(--accent-2);
+      text-align: center;
+    }
+
+    /* ===== Tablero ===== */
+    .stage {
+      position: relative;
+      width: min(92vw, calc(72vh * 0.6), 380px);
+      aspect-ratio: 360 / 600;
+      margin: 0 auto;
+      border-radius: var(--radius);
+      border: 2px solid rgba(255, 255, 255, 0.10);
+      overflow: hidden;
+      box-shadow:
+        var(--shadow),
+        inset 0 0 60px rgba(124, 92, 255, 0.10);
+      background:
+        radial-gradient(120% 70% at 50% -10%, rgba(124, 92, 255, 0.20), transparent 60%),
+        radial-gradient(100% 60% at 50% 115%, rgba(34, 211, 238, 0.12), transparent 60%),
+        #070b18;
+    }
+    #game {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      touch-action: none; /* evita scroll/gestos sobre el canvas */
+    }
+
+    /* ===== Overlays ===== */
+    .overlay[hidden] { display: none; }
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: rgba(7, 10, 24, 0.66);
+      backdrop-filter: blur(8px);
+      animation: fade 260ms ease;
+      padding: 16px;
+    }
+    @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+    .over-card {
+      text-align: center;
+      padding: 24px 22px;
+      background: #141b34;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      max-width: 300px;
+      width: 100%;
+    }
+    .over-emoji { font-size: 2.6rem; filter: drop-shadow(0 4px 12px rgba(124, 92, 255, 0.6)); }
+    .over-card h2 { margin: 8px 0 4px; font-size: 1.45rem; color: var(--accent-2); }
+    .over-card .over-sub { color: var(--ink-dim); font-size: 0.84rem; margin-bottom: 8px; }
+
+    .star-row { display: flex; justify-content: center; gap: 8px; margin: 10px 0 16px; }
+    .star-row .s {
+      font-size: 1.7rem;
+      filter: grayscale(1) opacity(0.35);
+      transition: filter 240ms ease, transform 240ms ease;
+    }
+    .star-row .s.on { filter: none; transform: scale(1.12); }
+
+    .over-actions { display: flex; flex-direction: column; gap: 8px; }
+
+    /* ===== Selección de nivel ===== */
+    .level-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .level-cell {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--ink);
+      font-family: "Space Grotesk", monospace;
+      font-weight: 700;
+      font-size: 1.25rem;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      transition: transform 120ms ease, border-color 160ms ease, background 160ms ease;
+    }
+    .level-cell:hover:not(:disabled) { transform: translateY(-3px); border-color: rgba(124, 92, 255, 0.7); }
+    .level-cell:active:not(:disabled) { transform: translateY(0); }
+    .level-cell:disabled { opacity: 0.4; cursor: not-allowed; }
+    .level-cell .lc-stars { font-size: 0.62rem; letter-spacing: 1px; color: #ffd95e; min-height: 0.8em; }
+    .level-cell .lc-lock { font-size: 1.1rem; }
+
+    /* ===== Controles ===== */
+    .controls { display: flex; align-items: center; gap: 10px; }
+    .controls .btn { flex: 1; }
+
+    .btn {
+      font-family: "Sora", sans-serif;
+      font-weight: 700;
+      font-size: 0.92rem;
+      padding: 12px 18px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      color: var(--ink);
+      transition: transform 120ms ease, filter 160ms ease, border-color 160ms ease;
+    }
+    .btn:active { transform: translateY(1px) scale(0.98); }
+    .btn-primary {
+      color: #fff;
+      background: var(--accent);
+      box-shadow: 0 8px 20px rgba(124, 92, 255, 0.35);
+    }
+    .btn-primary:hover { filter: brightness(1.07); }
+    .btn-ghost {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .btn-ghost:hover { border-color: rgba(255, 255, 255, 0.28); }
+
+    .icon-btn {
+      font-size: 1.15rem;
+      line-height: 1;
+      width: 46px;
+      height: 46px;
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      cursor: pointer;
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: border-color 160ms ease, opacity 160ms ease;
+    }
+    .icon-btn:hover { border-color: rgba(255, 255, 255, 0.24); }
+    .icon-btn.is-muted { opacity: 0.5; }
+
+    .hint {
+      text-align: center;
+      color: var(--ink-dim);
+      font-size: 0.78rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <a class="back-link" href="../index.html" aria-label="Back to Arcade">← Arcade</a>
+
+    <header class="head">
+      <h1 class="title" id="title"></h1>
+      <p class="subtitle">Cut the gravity ropes — slingshot the meteor into the black hole</p>
+    </header>
+
+    <section class="hud">
+      <div class="stat">
+        <span class="stat-label">Level</span>
+        <span class="stat-value" id="levelNum">1</span>
+      </div>
+      <div class="level-name" id="levelName">—</div>
+      <div class="stat">
+        <span class="stat-label">Stars</span>
+        <span class="stat-value" id="starCount">0/0</span>
+      </div>
+    </section>
+
+    <div class="stage">
+      <canvas id="game" role="img" aria-label="Astro Drop play area — tap the glowing ropes to cut them and guide the meteor into the black hole"></canvas>
+
+      <!-- Selección de nivel -->
+      <div class="overlay" id="levelSelect" hidden role="dialog" aria-label="Select level">
+        <div class="over-card">
+          <div class="over-emoji" aria-hidden="true">🌌</div>
+          <h2>Astro Drop</h2>
+          <p class="over-sub">Pick a level</p>
+          <div class="level-grid" id="levelGrid"></div>
+        </div>
+      </div>
+
+      <!-- Resultado (victoria / derrota) -->
+      <div class="overlay" id="result" hidden role="dialog" aria-label="Level result">
+        <div class="over-card">
+          <div class="over-emoji" id="resultEmoji" aria-hidden="true">🌀</div>
+          <h2 id="resultTitle">Captured!</h2>
+          <p class="over-sub" id="resultSub">Stars collected</p>
+          <div class="star-row" id="resultStars" aria-hidden="true">
+            <span class="s">★</span><span class="s">★</span><span class="s">★</span>
+          </div>
+          <div class="over-actions">
+            <button class="btn btn-primary" id="nextBtn">Next level</button>
+            <button class="btn btn-ghost" id="replayBtn">Replay</button>
+            <button class="btn btn-ghost" id="resultLevelsBtn">Levels</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section class="controls">
+      <button class="icon-btn" id="soundToggle" aria-label="Toggle sound" title="Sound">🔊</button>
+      <button class="btn btn-ghost" id="levelsBtn">Levels</button>
+      <button class="btn btn-ghost" id="restart">Restart</button>
+    </section>
+
+    <p class="hint" aria-hidden="true">Tap / swipe the ropes to cut · time your release for the slingshot</p>
+  </main>
+
+  <!-- Motor de física 2D (solo simulación; el render es propio en Canvas) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+  <script>
+  (function () {
+    "use strict";
+
+    /* =================================================================
+     * CONFIG — parámetros ajustables agrupados.
+     * Para regular la DIFICULTAD, los más útiles son:
+     *   - gravBase   : fuerza de atracción del agujero negro (g efectiva).
+     *   - gravMin/Max: límites del multiplicador 1/r (slingshot al acercarse).
+     *   - frictionAir: amortiguación del péndulo (menor = oscila más tiempo).
+     *   - capturePad : margen extra de captura sobre el radio del agujero.
+     *   - cutRadius  : tolerancia al cortar una cuerda con el toque.
+     * ================================================================= */
+    const CONFIG = {
+      title: "Astro Drop",
+      storageProgress: "arcade-astrodrop-progress", // índice de nivel más alto desbloqueado
+      storageStars: "arcade-astrodrop-stars",        // JSON: { indice: estrellas }
+      muteKey: "arcade-astrodrop-muted",
+
+      // Mundo lógico. El canvas escala por CSS manteniendo esta proporción.
+      world: { width: 360, height: 600 },
+
+      meteorRadius: 15,
+
+      // Gravedad ORBITAL: atracción central hacia el agujero negro.
+      // forceMag = masa * gravBase * clamp(refDist / dist, gravMin, gravMax)
+      gravBase: 0.0017,   // g efectiva (~1.7); más alto = atracción más fuerte
+      refDist: 200,       // distancia de referencia donde el multiplicador es 1
+      gravMin: 0.5,       // multiplicador mínimo (lejos)
+      gravMax: 2.4,       // multiplicador máximo (cerca → slingshot)
+
+      frictionAir: 0.012, // amortiguación del péndulo
+      capturePad: 14,     // margen extra de captura sobre el radio del agujero
+      cutRadius: 16,      // tolerancia (en unidades del mundo) para cortar una cuerda
+      outMargin: 80,      // margen fuera del tablero antes de "perder"
+      winAnimMs: 480,     // duración de la animación de succión al ganar
+      trailLen: 16,       // nº de muestras de la estela del meteorito
+
+      // Niveles hechos a mano. Coordenadas en unidades del mundo (360 x 600).
+      //  - meteor: posición inicial del meteorito
+      //  - blackhole: { x, y, r } meta
+      //  - ropes: anclas { x, y } que sujetan el meteorito (cuerda rígida)
+      //  - obstacles: { type:'circle'|'rect', x, y, r | w,h }
+      //  - stars: { x, y } estrellas de bonus opcionales
+      levels: [
+        { // 1 — tutorial: soltar y caer recto
+          name: "Let Go",
+          meteor: { x: 180, y: 150 },
+          blackhole: { x: 180, y: 470, r: 34 },
+          ropes: [ { x: 180, y: 80 } ],
+          obstacles: [],
+          stars: [ { x: 180, y: 300 } ],
+        },
+        { // 2 — péndulo: balancear y cortar
+          name: "Pendulum",
+          meteor: { x: 96, y: 152 },
+          blackhole: { x: 180, y: 482, r: 32 },
+          ropes: [ { x: 180, y: 82 } ],
+          obstacles: [],
+          stars: [ { x: 116, y: 250 }, { x: 180, y: 332 } ],
+        },
+        { // 3 — dos cuerdas: cortar ambas
+          name: "Double Knot",
+          meteor: { x: 180, y: 172 },
+          blackhole: { x: 180, y: 482, r: 32 },
+          ropes: [ { x: 92, y: 92 }, { x: 268, y: 92 } ],
+          obstacles: [],
+          stars: [ { x: 180, y: 320 } ],
+        },
+        { // 4 — rodeo: obstáculo lateral
+          name: "Detour",
+          meteor: { x: 108, y: 150 },
+          blackhole: { x: 252, y: 498, r: 32 },
+          ropes: [ { x: 150, y: 82 } ],
+          obstacles: [ { type: "circle", x: 178, y: 358, r: 30 } ],
+          stars: [ { x: 150, y: 248 }, { x: 250, y: 404 } ],
+        },
+        { // 5 — slingshot: lanzar al otro lado
+          name: "Slingshot",
+          meteor: { x: 82, y: 198 },
+          blackhole: { x: 288, y: 300, r: 30 },
+          ropes: [ { x: 82, y: 92 } ],
+          obstacles: [ { type: "rect", x: 180, y: 440, w: 210, h: 22 } ],
+          stars: [ { x: 150, y: 252 }, { x: 222, y: 288 }, { x: 282, y: 300 } ],
+        },
+        { // 6 — órbita: dos cuerdas + obstáculos laterales
+          name: "Orbit",
+          meteor: { x: 180, y: 128 },
+          blackhole: { x: 180, y: 472, r: 30 },
+          ropes: [ { x: 108, y: 70 }, { x: 252, y: 70 } ],
+          obstacles: [ { type: "circle", x: 104, y: 332, r: 24 }, { type: "circle", x: 256, y: 332, r: 24 } ],
+          stars: [ { x: 180, y: 248 }, { x: 180, y: 330 }, { x: 180, y: 410 } ],
+        },
+      ],
+    };
+
+    const W = CONFIG.world.width;
+    const H = CONFIG.world.height;
+    const MR = CONFIG.meteorRadius;
+    const NUM_LEVELS = CONFIG.levels.length;
+
+    /* ===== Referencias del DOM ===== */
+    const canvas       = document.getElementById("game");
+    const ctx          = canvas.getContext("2d");
+    const titleEl      = document.getElementById("title");
+    const levelNumEl   = document.getElementById("levelNum");
+    const levelNameEl  = document.getElementById("levelName");
+    const starCountEl  = document.getElementById("starCount");
+    const levelSelect  = document.getElementById("levelSelect");
+    const levelGrid    = document.getElementById("levelGrid");
+    const resultEl     = document.getElementById("result");
+    const resultEmoji  = document.getElementById("resultEmoji");
+    const resultTitle  = document.getElementById("resultTitle");
+    const resultSub    = document.getElementById("resultSub");
+    const resultStars  = document.getElementById("resultStars");
+    const nextBtn      = document.getElementById("nextBtn");
+    const replayBtn    = document.getElementById("replayBtn");
+    const resultLevelsBtn = document.getElementById("resultLevelsBtn");
+    const levelsBtn    = document.getElementById("levelsBtn");
+    const restartBtn   = document.getElementById("restart");
+    const soundBtn     = document.getElementById("soundToggle");
+
+    /* ===== Estado central del juego ===== */
+    const state = {
+      phase: "menu",     // menu | play | winning | won | lost
+      levelIndex: 0,
+      progress: 0,       // índice más alto desbloqueado
+      starsCollected: 0,
+      starsTotal: 0,
+      meteor: null,      // cuerpo Matter del meteorito
+      bh: { x: 0, y: 0, r: 0 },
+      pressed: false,
+      lastCut: { x: 0, y: 0 },
+      winAnim: 0,
+      shakeMag: 0,
+      muted: false,
+    };
+
+    let bestStars = {};   // { indice: mejor nº de estrellas }
+    const ropes = [];     // { constraint, ax, ay, cut }
+    const obstacles = []; // copia de los datos del nivel para dibujar
+    const starsArr = [];  // { x, y, r, collected }
+    const particles = [];
+    const rings = [];
+    const trail = [];     // posiciones recientes del meteorito
+
+    /* ===== Sprites (los crea el "designer"; con fallback a formas) ===== */
+    const meteorImg = new Image();
+    meteorImg.onerror = function () { meteorImg.failed = true; };
+    meteorImg.src = "assets/meteor.svg";
+
+    const bhImg = new Image();
+    bhImg.onerror = function () { bhImg.failed = true; };
+    bhImg.src = "assets/blackhole.svg";
+
+    function spriteReady(img) {
+      return img && !img.failed && img.complete && img.naturalWidth > 0;
+    }
+
+    /* ===== Matter.js: motor y mundo (sin paredes: salir = perder) ===== */
+    const { Engine, Bodies, Body, Composite, Constraint, Events } = Matter;
+    const engine = Engine.create();
+    engine.gravity.x = 0;
+    engine.gravity.y = 0; // sin gravedad global; usamos atracción central propia
+    engine.positionIterations = 8;
+    engine.velocityIterations = 6;
+    engine.constraintIterations = 4;
+    const world = engine.world;
+
+    /* ===== Utilidades ===== */
+    const clamp = function (v, a, b) { return Math.max(a, Math.min(b, v)); };
+    function dist2(ax, ay, bx, by) { const dx = ax - bx, dy = ay - by; return dx * dx + dy * dy; }
+    function easeOutBack(t) {
+      const c1 = 1.70158, c3 = c1 + 1;
+      return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+    }
+    function hexToRgb(hex) {
+      hex = hex.replace("#", "");
+      if (hex.length === 3) hex = hex.split("").map(function (c) { return c + c; }).join("");
+      const n = parseInt(hex, 16);
+      return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+    }
+    function rgba(hex, a) {
+      const c = hexToRgb(hex);
+      return "rgba(" + c.r + "," + c.g + "," + c.b + "," + a + ")";
+    }
+    // Distancia de un punto (px,py) al segmento (ax,ay)-(bx,by).
+    function pointSegDist(px, py, ax, ay, bx, by) {
+      const dx = bx - ax, dy = by - ay;
+      const len2 = dx * dx + dy * dy;
+      let t = len2 === 0 ? 0 : ((px - ax) * dx + (py - ay) * dy) / len2;
+      t = clamp(t, 0, 1);
+      const cx = ax + t * dx, cy = ay + t * dy;
+      return Math.hypot(px - cx, py - cy);
+    }
+
+    /* ===== Audio (WebAudio, opcional, con mute) ===== */
+    let audioCtx = null;
+    function ensureAudio() {
+      if (audioCtx) return;
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { audioCtx = null; }
+    }
+    function playTone(freq, dur, type, vol) {
+      if (state.muted) return;
+      ensureAudio();
+      if (!audioCtx) return;
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = type || "sine";
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(vol == null ? 0.15 : vol, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start();
+      o.stop(audioCtx.currentTime + dur);
+    }
+    function vibrate(pattern) {
+      if (navigator.vibrate) { try { navigator.vibrate(pattern); } catch (e) {} }
+    }
+
+    /* ===== Estrellas de fondo (capa animada en el canvas) ===== */
+    const bgStars = [];
+    (function buildBgStars() {
+      const count = 80;
+      for (let i = 0; i < count; i++) {
+        bgStars.push({
+          x: Math.random() * W,
+          y: Math.random() * H,
+          r: Math.random() * 1.4 + 0.3,
+          phase: Math.random() * Math.PI * 2,
+          speed: Math.random() * 0.0016 + 0.0006,
+          drift: Math.random() * 4 + 1,
+        });
+      }
+    })();
+
+    /* ===== Lienzo: resolución por DPR, render en unidades del mundo ===== */
+    const DPR = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = W * DPR;
+    canvas.height = H * DPR;
+    ctx.scale(DPR, DPR);
+
+    /* ===== Gravedad orbital: atracción central hacia el agujero negro ===== */
+    Events.on(engine, "beforeUpdate", function () {
+      if (state.phase !== "play" || !state.meteor) return;
+      const b = state.meteor;
+      const dx = state.bh.x - b.position.x;
+      const dy = state.bh.y - b.position.y;
+      const d = Math.hypot(dx, dy) || 0.0001;
+      const mul = clamp(CONFIG.refDist / d, CONFIG.gravMin, CONFIG.gravMax);
+      const f = b.mass * CONFIG.gravBase * mul;
+      Body.applyForce(b, b.position, { x: (dx / d) * f, y: (dy / d) * f });
+    });
+
+    /* ===== Carga de progreso / preferencias ===== */
+    function loadSaved() {
+      try {
+        state.progress = parseInt(localStorage.getItem(CONFIG.storageProgress) || "0", 10) || 0;
+        state.progress = clamp(state.progress, 0, NUM_LEVELS - 1);
+      } catch (e) { state.progress = 0; }
+      try {
+        bestStars = JSON.parse(localStorage.getItem(CONFIG.storageStars) || "{}") || {};
+      } catch (e) { bestStars = {}; }
+      try {
+        state.muted = localStorage.getItem(CONFIG.muteKey) === "1";
+      } catch (e) {}
+    }
+    function saveProgress() {
+      try { localStorage.setItem(CONFIG.storageProgress, String(state.progress)); } catch (e) {}
+    }
+    function saveStars() {
+      try { localStorage.setItem(CONFIG.storageStars, JSON.stringify(bestStars)); } catch (e) {}
+    }
+
+    /* ===== Construcción de un nivel ===== */
+    function makeMeteor(x, y) {
+      const b = Bodies.circle(x, y, MR, {
+        restitution: 0.28,
+        friction: 0.02,
+        frictionAir: CONFIG.frictionAir,
+        density: 0.001,
+        label: "meteor",
+      });
+      return b;
+    }
+
+    function loadLevel(index) {
+      state.levelIndex = clamp(index, 0, NUM_LEVELS - 1);
+      const lvl = CONFIG.levels[state.levelIndex];
+
+      // Limpiar mundo (sin estáticos persistentes: los recreamos cada nivel).
+      Composite.clear(world, false, true);
+      ropes.length = 0;
+      obstacles.length = 0;
+      starsArr.length = 0;
+      particles.length = 0;
+      rings.length = 0;
+      trail.length = 0;
+      state.shakeMag = 0;
+      state.winAnim = 0;
+      state.starsCollected = 0;
+
+      // Agujero negro (meta).
+      state.bh = { x: lvl.blackhole.x, y: lvl.blackhole.y, r: lvl.blackhole.r };
+
+      // Meteorito.
+      const m = makeMeteor(lvl.meteor.x, lvl.meteor.y);
+      state.meteor = m;
+      Composite.add(world, m);
+
+      // Obstáculos estáticos.
+      for (let i = 0; i < lvl.obstacles.length; i++) {
+        const o = lvl.obstacles[i];
+        let body;
+        if (o.type === "rect") {
+          body = Bodies.rectangle(o.x, o.y, o.w, o.h, { isStatic: true, friction: 0.4, restitution: 0.3, label: "obstacle" });
+        } else {
+          body = Bodies.circle(o.x, o.y, o.r, { isStatic: true, friction: 0.4, restitution: 0.3, label: "obstacle" });
+        }
+        Composite.add(world, body);
+        obstacles.push(o);
+      }
+
+      // Cuerdas de gravedad (constraints rígidas ancla → meteorito).
+      for (let i = 0; i < lvl.ropes.length; i++) {
+        const a = lvl.ropes[i];
+        const len = Math.hypot(a.x - lvl.meteor.x, a.y - lvl.meteor.y);
+        const c = Constraint.create({
+          pointA: { x: a.x, y: a.y },
+          bodyB: m,
+          pointB: { x: 0, y: 0 },
+          length: len,
+          stiffness: 0.9,
+          damping: 0.04,
+          label: "rope",
+        });
+        Composite.add(world, c);
+        ropes.push({ constraint: c, ax: a.x, ay: a.y, cut: false });
+      }
+
+      // Estrellas de bonus.
+      for (let i = 0; i < lvl.stars.length; i++) {
+        starsArr.push({ x: lvl.stars[i].x, y: lvl.stars[i].y, r: 11, collected: false });
+      }
+      state.starsTotal = starsArr.length;
+
+      // HUD + overlays.
+      levelNumEl.textContent = String(state.levelIndex + 1);
+      levelNameEl.textContent = lvl.name;
+      updateStarHud();
+      resultEl.hidden = true;
+      levelSelect.hidden = true;
+      state.phase = "play";
+    }
+
+    function updateStarHud() {
+      starCountEl.textContent = state.starsCollected + "/" + state.starsTotal;
+    }
+
+    /* ===== Corte de cuerdas ===== */
+    function tryCut(px, py) {
+      if (state.phase !== "play") return;
+      for (let i = 0; i < ropes.length; i++) {
+        const rp = ropes[i];
+        if (rp.cut) continue;
+        const m = state.meteor;
+        const d = pointSegDist(px, py, rp.ax, rp.ay, m.position.x, m.position.y);
+        if (d <= CONFIG.cutRadius) {
+          cutRope(rp);
+        }
+      }
+    }
+
+    function cutRope(rp) {
+      rp.cut = true;
+      Composite.remove(world, rp.constraint);
+      const m = state.meteor;
+      const mx = (rp.ax + m.position.x) / 2;
+      const my = (rp.ay + m.position.y) / 2;
+      burst(mx, my, "#22d3ee", 12);
+      shake(3);
+      vibrate(12);
+      playTone(420, 0.08, "triangle", 0.12);
+    }
+
+    /* ===== Comprobación de estado: estrellas, victoria, derrota ===== */
+    function checkPlayState() {
+      if (state.phase !== "play" || !state.meteor) return;
+      const m = state.meteor;
+
+      // Estrellas de bonus.
+      for (let i = 0; i < starsArr.length; i++) {
+        const s = starsArr[i];
+        if (s.collected) continue;
+        if (dist2(m.position.x, m.position.y, s.x, s.y) <= (s.r + MR) * (s.r + MR)) {
+          s.collected = true;
+          state.starsCollected++;
+          updateStarHud();
+          burst(s.x, s.y, "#ffd95e", 16);
+          flashRing(s.x, s.y, "#ffd95e", 40);
+          vibrate(10);
+          playTone(720, 0.12, "sine", 0.14);
+        }
+      }
+
+      // Victoria: el meteorito entra en el agujero negro.
+      const captureR = state.bh.r + CONFIG.capturePad;
+      if (dist2(m.position.x, m.position.y, state.bh.x, state.bh.y) <= captureR * captureR) {
+        startWin();
+        return;
+      }
+
+      // Derrota: el meteorito sale de los límites del tablero.
+      const m2 = CONFIG.outMargin;
+      if (m.position.x < -m2 || m.position.x > W + m2 || m.position.y < -m2 || m.position.y > H + m2) {
+        loseLevel();
+      }
+    }
+
+    function startWin() {
+      state.phase = "winning";
+      state.winAnim = 0;
+      burst(state.bh.x, state.bh.y, "#7c5cff", 30);
+      flashRing(state.bh.x, state.bh.y, "#22d3ee", state.bh.r * 3);
+      shake(10);
+      vibrate([20, 20, 50]);
+      playTone(520, 0.4, "triangle", 0.18);
+    }
+
+    function finalizeWin() {
+      state.phase = "won";
+      const i = state.levelIndex;
+      const prev = bestStars[i] || 0;
+      if (state.starsCollected > prev) { bestStars[i] = state.starsCollected; saveStars(); }
+      // Desbloquear el siguiente nivel.
+      if (i + 1 <= NUM_LEVELS - 1 && state.progress < i + 1) {
+        state.progress = i + 1;
+        saveProgress();
+      }
+      showResult(true);
+    }
+
+    function loseLevel() {
+      state.phase = "lost";
+      shake(12);
+      vibrate([40, 30, 80]);
+      playTone(120, 0.45, "sawtooth", 0.18);
+      showResult(false);
+    }
+
+    /* ===== Overlays de resultado ===== */
+    function showResult(won) {
+      const hasNext = state.levelIndex + 1 <= NUM_LEVELS - 1;
+      if (won) {
+        resultEmoji.textContent = "🌀";
+        resultTitle.textContent = "Captured!";
+        resultSub.textContent = state.starsTotal > 0
+          ? ("Stars " + state.starsCollected + " / " + state.starsTotal)
+          : "Level complete";
+        resultStars.hidden = state.starsTotal === 0;
+        renderResultStars();
+        nextBtn.hidden = !hasNext;
+        replayBtn.textContent = "Replay";
+      } else {
+        resultEmoji.textContent = "💥";
+        resultTitle.textContent = "Lost in space";
+        resultSub.textContent = "The meteor drifted away";
+        resultStars.hidden = true;
+        nextBtn.hidden = true;
+        replayBtn.textContent = "Retry";
+      }
+      resultEl.hidden = false;
+    }
+
+    function renderResultStars() {
+      // Construye la fila de estrellas según las recolectadas en este intento.
+      resultStars.innerHTML = "";
+      for (let i = 0; i < state.starsTotal; i++) {
+        const span = document.createElement("span");
+        span.className = "s" + (i < state.starsCollected ? " on" : "");
+        span.textContent = "★";
+        resultStars.appendChild(span);
+      }
+    }
+
+    /* ===== Efectos: partículas, anillos, shake ===== */
+    function burst(x, y, color, n) {
+      for (let i = 0; i < n; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const spd = Math.random() * 150 + 40;
+        particles.push({
+          x: x, y: y,
+          vx: Math.cos(ang) * spd,
+          vy: Math.sin(ang) * spd,
+          life: 1, maxLife: Math.random() * 0.5 + 0.4,
+          size: Math.random() * 3 + 1.5,
+          color: color,
+        });
+      }
+    }
+    function flashRing(x, y, color, maxR) {
+      rings.push({ x: x, y: y, r: 2, maxR: maxR, life: 1, color: color });
+    }
+    function shake(mag) { state.shakeMag = Math.max(state.shakeMag, mag); }
+
+    function updateEffects(dts) {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.life -= dts / p.maxLife;
+        if (p.life <= 0) { particles.splice(i, 1); continue; }
+        p.x += p.vx * dts;
+        p.y += p.vy * dts;
+        p.vx *= 0.98; p.vy *= 0.98;
+      }
+      for (let i = rings.length - 1; i >= 0; i--) {
+        const ring = rings[i];
+        ring.life -= dts / 0.5;
+        if (ring.life <= 0) { rings.splice(i, 1); continue; }
+        ring.r = ring.maxR * (1 - ring.life) + 2;
+      }
+      state.shakeMag *= 0.86;
+      if (state.shakeMag < 0.3) state.shakeMag = 0;
+    }
+
+    /* =================================================================
+     * RENDER — Canvas propio.
+     * ================================================================= */
+    function drawBgStars(now) {
+      ctx.save();
+      for (let i = 0; i < bgStars.length; i++) {
+        const s = bgStars[i];
+        s.y += s.drift * 0.004;
+        if (s.y > H) { s.y = 0; s.x = Math.random() * W; }
+        const tw = 0.35 + 0.45 * (0.5 + 0.5 * Math.sin(now * s.speed + s.phase));
+        ctx.globalAlpha = tw;
+        ctx.fillStyle = "#dce3ff";
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawBlackHole(now) {
+      const cx = state.bh.x, cy = state.bh.y, r = state.bh.r;
+      // Aura de campo gravitatorio (anillo de captura discontinuo + pulso).
+      ctx.save();
+      const pulse = 0.18 + 0.12 * (0.5 + 0.5 * Math.sin(now * 0.003));
+      ctx.strokeStyle = rgba("#7c5cff", pulse);
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([5, 7]);
+      ctx.beginPath();
+      ctx.arc(cx, cy, r + CONFIG.capturePad, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      if (spriteReady(bhImg)) {
+        ctx.shadowColor = "#7c5cff";
+        ctx.shadowBlur = r * 0.8;
+        ctx.rotate(now * 0.0004);
+        const box = r * 2.8;
+        ctx.drawImage(bhImg, -box / 2, -box / 2, box, box);
+      } else {
+        // Fallback dibujado: disco de acreción giratorio + horizonte oscuro.
+        ctx.shadowColor = "#7c5cff";
+        ctx.shadowBlur = r * 0.9;
+        ctx.lineWidth = r * 0.55;
+        const rg = ctx.createRadialGradient(0, 0, r * 0.5, 0, 0, r * 1.25);
+        rg.addColorStop(0, "#22d3ee");
+        rg.addColorStop(0.6, "#7c5cff");
+        rg.addColorStop(1, rgba("#7c5cff", 0));
+        ctx.strokeStyle = rg;
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 0.95, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        // Zona caliente giratoria.
+        ctx.lineWidth = r * 0.5;
+        ctx.strokeStyle = rgba("#bff7ff", 0.8);
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 0.95, now * 0.002, now * 0.002 + 1.1);
+        ctx.stroke();
+        // Horizonte de sucesos.
+        const eg = ctx.createRadialGradient(-r * 0.15, -r * 0.15, r * 0.05, 0, 0, r * 0.7);
+        eg.addColorStop(0, "#1a1030");
+        eg.addColorStop(1, "#04040a");
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 0.66, 0, Math.PI * 2);
+        ctx.fillStyle = eg;
+        ctx.fill();
+        ctx.lineWidth = Math.max(1, r * 0.04);
+        ctx.strokeStyle = rgba("#22d3ee", 0.5);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawObstacles() {
+      ctx.save();
+      for (let i = 0; i < obstacles.length; i++) {
+        const o = obstacles[i];
+        ctx.shadowColor = "rgba(0,0,0,0.5)";
+        ctx.shadowBlur = 8;
+        const grad = ctx.createLinearGradient(o.x - 20, o.y - 20, o.x + 20, o.y + 20);
+        grad.addColorStop(0, "#3a4364");
+        grad.addColorStop(1, "#222a44");
+        ctx.fillStyle = grad;
+        ctx.strokeStyle = "rgba(255,255,255,0.14)";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        if (o.type === "rect") {
+          const rr = 8;
+          roundRect(ctx, o.x - o.w / 2, o.y - o.h / 2, o.w, o.h, rr);
+        } else {
+          ctx.arc(o.x, o.y, o.r, 0, Math.PI * 2);
+        }
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+    function roundRect(c, x, y, w, h, r) {
+      c.moveTo(x + r, y);
+      c.arcTo(x + w, y, x + w, y + h, r);
+      c.arcTo(x + w, y + h, x, y + h, r);
+      c.arcTo(x, y + h, x, y, r);
+      c.arcTo(x, y, x + w, y, r);
+      c.closePath();
+    }
+
+    function drawRopes() {
+      const m = state.meteor;
+      if (!m) return;
+      for (let i = 0; i < ropes.length; i++) {
+        const rp = ropes[i];
+        if (rp.cut) continue;
+        ctx.save();
+        // Cuerda con degradado y leve glow.
+        ctx.shadowColor = "#22d3ee";
+        ctx.shadowBlur = 6;
+        const g = ctx.createLinearGradient(rp.ax, rp.ay, m.position.x, m.position.y);
+        g.addColorStop(0, "#7c5cff");
+        g.addColorStop(1, "#22d3ee");
+        ctx.strokeStyle = g;
+        ctx.lineWidth = 3;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(rp.ax, rp.ay);
+        ctx.lineTo(m.position.x, m.position.y);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        // Ancla.
+        ctx.fillStyle = "#cfd8ff";
+        ctx.beginPath();
+        ctx.arc(rp.ax, rp.ay, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(124,92,255,0.7)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(rp.ax, rp.ay, 8, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    function drawStars(now) {
+      for (let i = 0; i < starsArr.length; i++) {
+        const s = starsArr[i];
+        if (s.collected) continue;
+        const pulse = 1 + 0.12 * Math.sin(now * 0.004 + i);
+        drawStarShape(s.x, s.y, s.r * pulse, now * 0.0006 + i, 1);
+      }
+    }
+    function drawStarShape(cx, cy, r, rot, alpha) {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(cx, cy);
+      ctx.rotate(rot);
+      ctx.shadowColor = "#ffd95e";
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      for (let i = 0; i < 10; i++) {
+        const rad = (i % 2 === 0) ? r : r * 0.45;
+        const ang = (Math.PI / 5) * i - Math.PI / 2;
+        const x = Math.cos(ang) * rad, y = Math.sin(ang) * rad;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      const g = ctx.createRadialGradient(0, 0, r * 0.1, 0, 0, r);
+      g.addColorStop(0, "#fff6cf");
+      g.addColorStop(1, "#ffce3a");
+      ctx.fillStyle = g;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawTrail() {
+      if (trail.length < 2) return;
+      ctx.save();
+      for (let i = 1; i < trail.length; i++) {
+        const a = trail[i - 1], b = trail[i];
+        const t = i / trail.length;
+        ctx.globalAlpha = t * 0.5;
+        ctx.strokeStyle = "#ff8a3c";
+        ctx.lineWidth = MR * t * 0.9;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawMeteor(now) {
+      const m = state.meteor;
+      if (!m) return;
+      let r = MR, alpha = 1, cx = m.position.x, cy = m.position.y;
+      // Animación de succión al ganar: encoger y atraer hacia el agujero.
+      if (state.phase === "winning") {
+        const t = clamp(state.winAnim / CONFIG.winAnimMs, 0, 1);
+        cx = m.position.x + (state.bh.x - m.position.x) * t;
+        cy = m.position.y + (state.bh.y - m.position.y) * t;
+        r = MR * (1 - t);
+        alpha = 1 - t * 0.4;
+      }
+      if (r <= 0.5) return;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(cx, cy);
+      ctx.rotate(m.angle);
+      ctx.shadowColor = "#ff8a3c";
+      ctx.shadowBlur = r * 0.9;
+      if (spriteReady(meteorImg)) {
+        ctx.drawImage(meteorImg, -r, -r, r * 2, r * 2);
+      } else {
+        // Fallback: roca con degradado, cráteres y borde brillante.
+        const g = ctx.createRadialGradient(-r * 0.3, -r * 0.3, r * 0.1, 0, 0, r);
+        g.addColorStop(0, "#c2ab97");
+        g.addColorStop(0.5, "#7c6a5a");
+        g.addColorStop(1, "#3b2f28");
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.fillStyle = g;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        // Cráteres.
+        ctx.fillStyle = "rgba(40,30,24,0.55)";
+        const craters = [[-0.3, 0.2, 0.22], [0.32, -0.1, 0.16], [0.1, 0.4, 0.13]];
+        for (let i = 0; i < craters.length; i++) {
+          const c = craters[i];
+          ctx.beginPath();
+          ctx.arc(c[0] * r, c[1] * r, c[2] * r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        // Borde brillante.
+        ctx.lineWidth = Math.max(1, r * 0.06);
+        ctx.strokeStyle = "rgba(255,217,160,0.45)";
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawParticles() {
+      ctx.save();
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        ctx.globalAlpha = Math.max(0, p.life);
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      for (let i = 0; i < rings.length; i++) {
+        const ring = rings[i];
+        ctx.globalAlpha = Math.max(0, ring.life) * 0.6;
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = ring.color;
+        ctx.beginPath();
+        ctx.arc(ring.x, ring.y, ring.r, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function render(now) {
+      ctx.clearRect(0, 0, W, H);
+      const sx = (Math.random() * 2 - 1) * state.shakeMag;
+      const sy = (Math.random() * 2 - 1) * state.shakeMag;
+      ctx.save();
+      ctx.translate(sx, sy);
+      drawBgStars(now);
+      drawBlackHole(now);
+      drawObstacles();
+      drawStars(now);
+      drawTrail();
+      drawRopes();
+      drawMeteor(now);
+      drawParticles();
+      ctx.restore();
+    }
+
+    /* ===== Bucle principal: física a paso fijo + render por frame ===== */
+    const STEP = 1000 / 60;
+    let acc = 0;
+    let lastTime = performance.now();
+    function loop(now) {
+      let dt = now - lastTime;
+      lastTime = now;
+      if (dt > 250) dt = 250;
+
+      if (state.phase === "play") {
+        acc += dt;
+        let steps = 0;
+        while (acc >= STEP && steps < 5) {
+          Engine.update(engine, STEP);
+          acc -= STEP;
+          steps++;
+          // Comprobar captura/derrota tras CADA substep evita el túnel del meteorito a alta velocidad.
+          checkPlayState();
+          if (state.phase !== "play") break;
+        }
+        if (acc > STEP) acc = 0;
+        // Estela del meteorito.
+        if (state.meteor) {
+          trail.push({ x: state.meteor.position.x, y: state.meteor.position.y });
+          if (trail.length > CONFIG.trailLen) trail.shift();
+        }
+      } else if (state.phase === "winning") {
+        state.winAnim += dt;
+        if (state.winAnim >= CONFIG.winAnimMs) finalizeWin();
+      }
+
+      updateEffects(dt / 1000);
+      render(now);
+      requestAnimationFrame(loop);
+    }
+
+    /* ===== Entrada: puntero (mouse + táctil unificados) ===== */
+    function pointerToWorld(clientX, clientY) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: (clientX - rect.left) / rect.width * W,
+        y: (clientY - rect.top) / rect.height * H,
+      };
+    }
+    canvas.addEventListener("pointerdown", function (e) {
+      ensureAudio();
+      state.pressed = true;
+      const p = pointerToWorld(e.clientX, e.clientY);
+      state.lastCut = p;
+      tryCut(p.x, p.y);
+    });
+    canvas.addEventListener("pointermove", function (e) {
+      if (!state.pressed) return;
+      const p = pointerToWorld(e.clientX, e.clientY);
+      // Muestrea a lo largo del trazo (lastCut → p) para no perder cuerdas en swipes rápidos.
+      const prev = state.lastCut;
+      const segs = Math.max(1, Math.ceil(Math.hypot(p.x - prev.x, p.y - prev.y) / CONFIG.cutRadius));
+      for (let s = 1; s <= segs; s++) {
+        const t = s / segs;
+        tryCut(prev.x + (p.x - prev.x) * t, prev.y + (p.y - prev.y) * t);
+      }
+      state.lastCut = p;
+    });
+    function releasePointer() { state.pressed = false; }
+    canvas.addEventListener("pointerup", releasePointer);
+    canvas.addEventListener("pointercancel", releasePointer);
+    canvas.addEventListener("pointerleave", releasePointer);
+    // Refuerza el bloqueo de scroll en táctil.
+    canvas.addEventListener("touchmove", function (e) { e.preventDefault(); }, { passive: false });
+
+    /* ===== Selección de nivel ===== */
+    function buildLevelGrid() {
+      levelGrid.innerHTML = "";
+      for (let i = 0; i < NUM_LEVELS; i++) {
+        const cell = document.createElement("button");
+        cell.className = "level-cell";
+        const unlocked = i <= state.progress;
+        cell.disabled = !unlocked;
+        const num = document.createElement("span");
+        num.textContent = String(i + 1);
+        cell.appendChild(num);
+        const starsLine = document.createElement("span");
+        starsLine.className = "lc-stars";
+        if (!unlocked) {
+          const lock = document.createElement("span");
+          lock.className = "lc-lock";
+          lock.textContent = "🔒";
+          cell.appendChild(lock);
+        } else {
+          const best = bestStars[i] || 0;
+          const total = CONFIG.levels[i].stars.length;
+          starsLine.textContent = total > 0 ? ("★" + best + "/" + total) : "";
+          cell.appendChild(starsLine);
+        }
+        cell.addEventListener("click", function () {
+          if (i <= state.progress) { loadLevel(i); }
+        });
+        levelGrid.appendChild(cell);
+      }
+    }
+    function openLevelSelect() {
+      buildLevelGrid();
+      resultEl.hidden = true;
+      levelSelect.hidden = false;
+      state.phase = "menu";
+    }
+
+    /* ===== Botones ===== */
+    levelsBtn.addEventListener("click", openLevelSelect);
+    resultLevelsBtn.addEventListener("click", openLevelSelect);
+    restartBtn.addEventListener("click", function () { loadLevel(state.levelIndex); });
+    replayBtn.addEventListener("click", function () { loadLevel(state.levelIndex); });
+    nextBtn.addEventListener("click", function () { loadLevel(state.levelIndex + 1); });
+    soundBtn.addEventListener("click", function () {
+      state.muted = !state.muted;
+      soundBtn.textContent = state.muted ? "🔇" : "🔊";
+      soundBtn.classList.toggle("is-muted", state.muted);
+      try { localStorage.setItem(CONFIG.muteKey, state.muted ? "1" : "0"); } catch (e) {}
+    });
+
+    /* ===== Inicialización ===== */
+    (function init() {
+      const words = CONFIG.title.split(" ");
+      titleEl.textContent = words[0];
+      if (words.length > 1) {
+        const span = document.createElement("span");
+        span.textContent = words.slice(1).join(" ");
+        titleEl.appendChild(span);
+      }
+      document.title = CONFIG.title + " · Cosmic physics puzzle";
+
+      loadSaved();
+      soundBtn.textContent = state.muted ? "🔇" : "🔊";
+      soundBtn.classList.toggle("is-muted", state.muted);
+
+      // Sprite del meteorito recargado para refrescar la preview si llega tarde.
+      meteorImg.onload = function () {};
+      bhImg.onload = function () {};
+
+      openLevelSelect();
+      requestAnimationFrame(loop);
+    })();
+  })();
+  </script>
+</body>
+</html>
