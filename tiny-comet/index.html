@@ -11,11 +11,15 @@
 </head>
 <body>
   <main class="app">
-    <a class="back-link" href="../index.html" aria-label="Back to Arcade">← Arcade</a>
+    <!-- Barra superior compacta: volver + sonido en una sola fila -->
+    <div class="topbar">
+      <a class="back-link" href="../index.html" aria-label="Back to Arcade">← Arcade</a>
+      <button class="icon-btn" id="soundToggle" aria-label="Toggle sound" title="Sound"></button>
+    </div>
 
     <header class="head">
       <h1 class="title">Tiny<span>Comet</span></h1>
-      <p class="subtitle">Launch your probe, reel in stellar fragments, upgrade, dive deeper</p>
+      <p class="subtitle">Reel in stellar fragments · upgrade · dive deeper</p>
     </header>
 
     <!-- ===== HUD ===== -->
@@ -34,19 +38,16 @@
       </div>
     </div>
 
-    <!-- ===== Play area (Canvas) ===== -->
-    <div class="board-wrap">
+    <!-- ===== Play area (Canvas) — ocupa el alto restante ===== -->
+    <div class="stage-area" id="stageArea">
       <canvas id="stage" aria-label="Tiny Comet diving field"></canvas>
     </div>
 
-    <!-- ===== Controls ===== -->
-    <section class="controls">
-      <button class="icon-btn" id="soundToggle" aria-label="Toggle sound" title="Sound">🔊</button>
-      <button class="btn btn-primary btn-action" id="actionBtn">Launch probe ▾</button>
-    </section>
+    <!-- ===== Acción + leyenda (siempre visibles) ===== -->
+    <button class="btn btn-primary btn-action" id="actionBtn">Launch probe ▾</button>
     <p class="hint" id="hint">Drag left/right to steer · the magnet grabs fragments it passes</p>
 
-    <!-- ===== Upgrades ===== -->
+    <!-- ===== Upgrades (tira compacta) ===== -->
     <section class="shop">
       <div class="shop-head">
         <h2 class="shop-title">Upgrades</h2>

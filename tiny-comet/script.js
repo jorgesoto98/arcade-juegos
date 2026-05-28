@@ -12,6 +12,7 @@
 /* ---------- Referencias del DOM ---------- */
 const canvas      = document.getElementById("stage");
 const ctx         = canvas.getContext("2d");
+const stageArea   = document.getElementById("stageArea");
 
 /* Polyfill mínimo de roundRect: algunos Safari antiguos no lo tienen y
    un throw dentro del bucle de render rompería el juego entero. */
@@ -50,14 +51,26 @@ const PROBE_MINX = 24, PROBE_MAXX = 276;
 const DESCEND = 128;     // unidades/seg al bajar (sin mejoras)
 const ASCEND  = 122;     // unidades/seg al subir (sin mejoras)
 
+/* ---------- Iconos SVG inline (sin emojis) ----------
+   Todos usan currentColor para heredar el color del contenedor. */
+const SVG = {
+  cable:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="3" x2="12" y2="15"/><polyline points="7 11 12 16 17 11"/><line x1="5" y1="20" x2="19" y2="20"/></svg>`,
+  magnet: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3v8a6 6 0 0 0 12 0V3"/><line x1="6" y1="3" x2="9.5" y2="3"/><line x1="14.5" y1="3" x2="18" y2="3"/><line x1="6" y1="8" x2="9.5" y2="8"/><line x1="14.5" y1="8" x2="18" y2="8"/></svg>`,
+  line:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8.5" width="9" height="7" rx="3.5"/><rect x="12" y="8.5" width="9" height="7" rx="3.5"/></svg>`,
+  reel:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.4"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.1 5.1l2.1 2.1M16.8 16.8l2.1 2.1M18.9 5.1l-2.1 2.1M7.2 16.8l-2.1 2.1"/></svg>`,
+  soundOn:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16 8.5a4.5 4.5 0 0 1 0 7"/><path d="M18.5 6a8 8 0 0 1 0 12"/></svg>`,
+  soundOff: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><line x1="16" y1="9" x2="21.5" y2="14.5"/><line x1="21.5" y1="9" x2="16" y2="14.5"/></svg>`,
+  dust:     `<svg class="dust-mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2 L13.8 10.2 L22 12 L13.8 13.8 L12 22 L10.2 13.8 L2 12 L10.2 10.2 Z"/></svg>`,
+};
+
 /* ---------- Definición de mejoras ----------
    Cada nivel encarece según base · growth^nivel. Las funciones
    derivadas traducen el nivel a un efecto concreto del juego. */
 const UPGRADES = {
-  cable:  { icon: "🛰️", name: "Cable",  desc: "Dive deeper into the void",       base: 22, growth: 1.55, max: 12 },
-  magnet: { icon: "🧲", name: "Magnet", desc: "Wider fragment pickup radius",    base: 16, growth: 1.5,  max: 10 },
-  line:   { icon: "🪢", name: "Line",   desc: "Carry more fragments per dive",   base: 30, growth: 1.6,  max: 10 },
-  reel:   { icon: "⚙️", name: "Reel",   desc: "Reel in and out faster",          base: 26, growth: 1.5,  max: 10 },
+  cable:  { icon: SVG.cable,  name: "Cable",  desc: "Dive deeper into the void",       base: 22, growth: 1.55, max: 12 },
+  magnet: { icon: SVG.magnet, name: "Magnet", desc: "Wider fragment pickup radius",    base: 16, growth: 1.5,  max: 10 },
+  line:   { icon: SVG.line,   name: "Line",   desc: "Carry more fragments per dive",   base: 30, growth: 1.6,  max: 10 },
+  reel:   { icon: SVG.reel,   name: "Reel",   desc: "Reel in and out faster",          base: 26, growth: 1.5,  max: 10 },
 };
 const UPG_ORDER = ["cable", "magnet", "line", "reel"];
 
@@ -163,7 +176,7 @@ function playSell(n) {
   notes.forEach((f, i) => setTimeout(() => tone(f, 0.18, "sine", 0.06), i * 90));
 }
 function reflectSoundUI() {
-  soundToggle.textContent = state.soundOn ? "🔊" : "🔇";
+  soundToggle.innerHTML = state.soundOn ? SVG.soundOn : SVG.soundOff;
   soundToggle.classList.toggle("is-muted", !state.soundOn);
   soundToggle.setAttribute("aria-pressed", String(state.soundOn));
 }
@@ -301,7 +314,7 @@ function sell() {
   state.phase = "idle";
   state.probe.y = SURFACE_Y;
   if (gained > 0) {
-    addFloat(`+${gained} ✦`, "#22d3ee");
+    addFloat(`+${gained} dust`, "#22d3ee");
     playSell(state.haul.length);
     if (navigator.vibrate) navigator.vibrate(18);
   } else {
@@ -409,14 +422,31 @@ function collectFragments(dt) {
 
 /* ---------- Render ---------- */
 let view = { w: 300, h: 400, scale: 1, dpr: 1 };
-function resize() {
+
+/* Ajusta el canvas al ALTO disponible del contenedor flexible (.stage-area),
+   manteniendo la proporción 3:4 (vertical). Si por proporción se saldría de
+   ancho, se limita al ancho. Así todo cabe en el viewport sin scroll. */
+function fitCanvas() {
+  const availW = stageArea.clientWidth;
+  const availH = stageArea.clientHeight;
+  if (availW <= 0 || availH <= 0) return;
+
+  const ratio = LW / LH;                 // ancho/alto = 0.75
+  let h = availH;
+  let w = h * ratio;
+  if (w > availW) { w = availW; h = w / ratio; }  // limitado por ancho
+
+  // tamaño CSS visible
+  canvas.style.width = w + "px";
+  canvas.style.height = h + "px";
+  // resolución interna (nitidez retina)
   const dpr = window.devicePixelRatio || 1;
-  const rect = canvas.getBoundingClientRect();
-  canvas.width = Math.round(rect.width * dpr);
-  canvas.height = Math.round(rect.height * dpr);
-  view.scale = rect.width / LW;     // unidades lógicas → px CSS
+  canvas.width = Math.max(1, Math.round(w * dpr));
+  canvas.height = Math.max(1, Math.round(h * dpr));
+
+  view.scale = w / LW;                    // unidades lógicas → px CSS
   view.dpr = dpr;
-  view.w = rect.width; view.h = rect.height;
+  view.w = w; view.h = h;
 }
 
 function render() {
@@ -703,7 +733,12 @@ window.addEventListener("keydown", (e) => {
 
 actionBtn.addEventListener("click", onAction);
 soundToggle.addEventListener("click", toggleSound);
-window.addEventListener("resize", resize);
+window.addEventListener("resize", fitCanvas);
+window.addEventListener("orientationchange", fitCanvas);
+// Reajusta el canvas cuando cambia el alto disponible (fuentes, teclado, etc.)
+if (typeof ResizeObserver !== "undefined") {
+  new ResizeObserver(() => fitCanvas()).observe(stageArea);
+}
 
 /* ---------- Tienda de mejoras ---------- */
 function renderUpgrades() {
@@ -717,19 +752,16 @@ function renderUpgrades() {
 
     const card = document.createElement("div");
     card.className = "up-card";
+    card.title = `${u.name} · ${u.desc}`;   // descripción en tooltip (tira compacta)
 
-    let pips = "";
-    for (let i = 0; i < u.max; i++) pips += `<span class="pip ${i < lvl ? "on" : ""}"></span>`;
-
+    const pct = Math.round((lvl / u.max) * 100);
     card.innerHTML = `
-      <div class="up-top">
-        <span class="up-icon">${u.icon}</span>
-        <span class="up-name">${u.name}</span>
-      </div>
-      <div class="up-desc">${u.desc}</div>
-      <div class="up-level" aria-label="Level ${lvl} of ${u.max}">${pips}</div>
+      <span class="up-icon">${u.icon}</span>
+      <span class="up-name">${u.name}</span>
+      <div class="up-bar" aria-label="Level ${lvl} of ${u.max}"><span style="width:${pct}%"></span></div>
+      <span class="up-lv">Lv ${lvl}</span>
       <button class="up-buy ${isMax ? "is-max" : ""}" ${(!canBuy || isMax) ? "disabled" : ""} data-key="${key}">
-        ${isMax ? "MAX" : `${cost} ✦`}
+        ${isMax ? "MAX" : `${cost}${SVG.dust}`}
       </button>
     `;
     upgradesEl.appendChild(card);
@@ -756,7 +788,7 @@ function buyUpgrade(key) {
 function init() {
   loadSave();
   reflectSoundUI();
-  resize();
+  fitCanvas();
   refreshHUD();
   refreshDepthHUD();
   renderUpgrades();
