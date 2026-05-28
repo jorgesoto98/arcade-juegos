@@ -69,10 +69,22 @@ const state = {
   soundOn: true,
 };
 
-/* ---------- Canvas responsive + nítido en HiDPI ---------- */
+/* ---------- Canvas responsive + nítido en HiDPI ----------
+   El tablero es el elemento elástico de la columna. Calculamos el
+   cuadrado más grande que cabe en el contenedor (mín. entre ancho y
+   alto disponibles) para que todo entre en el viewport sin scroll. */
 function resizeCanvas() {
-  const rect = canvas.getBoundingClientRect();
-  const cssSize = Math.max(1, rect.width); // el CSS lo mantiene cuadrado (aspect-ratio 1/1)
+  const wrap = canvas.parentElement; // .board-wrap (flex elástico)
+  const cs = getComputedStyle(wrap);
+  const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+  const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+  const availW = wrap.clientWidth - padX;
+  const availH = wrap.clientHeight - padY;
+  const cssSize = Math.max(120, Math.floor(Math.min(availW, availH)));
+  // Tamaño visible (px CSS): cuadrado que cabe en el espacio restante
+  canvas.style.width = cssSize + "px";
+  canvas.style.height = cssSize + "px";
+  // Búfer nítido en HiDPI
   const dpr = window.devicePixelRatio || 1;
   canvas.width = Math.round(cssSize * dpr);
   canvas.height = Math.round(cssSize * dpr);
@@ -644,13 +656,13 @@ function drawPulsarOverlay(size) {
   const o = ctx.lineWidth / 2 + 1;
   roundRectPath(o, o, size - 2 * o, size - 2 * o, Math.min(14, size * 0.04));
   ctx.stroke();
-  // Etiqueta "⚡ x2"
+  // Etiqueta "x2" (sin emojis)
   ctx.shadowBlur = 0;
   ctx.fillStyle = "#fde68a";
   ctx.font = `700 ${Math.max(11, size * 0.05)}px "Space Grotesk", monospace`;
   ctx.textAlign = "right";
   ctx.textBaseline = "top";
-  ctx.fillText("⚡ x2", size - size * 0.045, size * 0.04);
+  ctx.fillText("x2", size - size * 0.045, size * 0.04);
   ctx.restore();
 }
 
@@ -719,9 +731,10 @@ function loadSoundPref() {
   reflectSoundUI();
 }
 function reflectSoundUI() {
-  soundToggle.textContent = state.soundOn ? "🔊" : "🔇";
+  // El icono es SVG: solo alternamos clase/estado (sin emojis)
   soundToggle.classList.toggle("is-muted", !state.soundOn);
   soundToggle.setAttribute("aria-pressed", String(state.soundOn));
+  soundToggle.title = state.soundOn ? "Sound on" : "Sound off";
 }
 function toggleSound() {
   state.soundOn = !state.soundOn;
@@ -787,6 +800,11 @@ newGameBtn.addEventListener("click", startGame);
 pauseBtn.addEventListener("click", togglePause);
 soundToggle.addEventListener("click", toggleSound);
 window.addEventListener("resize", resizeCanvas);
+window.addEventListener("orientationchange", resizeCanvas);
+// Al cargar la tipografía cambia la altura del encabezado → recalcula el cuadrado
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(resizeCanvas);
+}
 
 // Pausa automática al ocultar la pestaña: rAF se congela y, al volver, el
 // acumulador haría avanzar varias celdas de golpe (muerte casi segura).

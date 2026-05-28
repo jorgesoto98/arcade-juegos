@@ -41,7 +41,12 @@
         <!-- Overlay de inicio -->
         <div class="overlay" id="startOverlay">
           <div class="overlay-card">
-            <div class="overlay-emoji">🐍</div>
+            <div class="overlay-icon" aria-hidden="true">
+              <svg viewBox="0 0 48 48" fill="none">
+                <path d="M9 35 q0 -11 11 -11 q11 0 11 -11" stroke="#7c5cff" stroke-width="6" stroke-linecap="round"/>
+                <circle cx="33" cy="12" r="5" fill="#22d3ee"/>
+              </svg>
+            </div>
             <h2>Snake</h2>
             <p>Arrows / WASD / swipe to move</p>
             <ul class="legend" aria-label="What's on the board">
@@ -57,7 +62,12 @@
         <!-- Overlay de pausa -->
         <div class="overlay" id="pauseOverlay" hidden>
           <div class="overlay-card">
-            <div class="overlay-emoji">⏸️</div>
+            <div class="overlay-icon" aria-hidden="true">
+              <svg viewBox="0 0 48 48" fill="none">
+                <rect x="14" y="12" width="7" height="24" rx="3" fill="#22d3ee"/>
+                <rect x="27" y="12" width="7" height="24" rx="3" fill="#22d3ee"/>
+              </svg>
+            </div>
             <h2>Paused</h2>
             <p>Press space or resume to continue</p>
             <button class="btn btn-primary" id="resumeBtn">Resume</button>
@@ -67,7 +77,12 @@
         <!-- Overlay de game over -->
         <div class="overlay" id="overOverlay" hidden>
           <div class="overlay-card">
-            <div class="overlay-emoji">💥</div>
+            <div class="overlay-icon" aria-hidden="true">
+              <svg viewBox="0 0 48 48" fill="none">
+                <circle cx="24" cy="24" r="16" stroke="#f472b6" stroke-width="4"/>
+                <path d="M18 18 L30 30 M30 18 L18 30" stroke="#f472b6" stroke-width="4" stroke-linecap="round"/>
+              </svg>
+            </div>
             <h2 class="over-title">Game over</h2>
             <p id="overStats" aria-live="polite">—</p>
             <button class="btn btn-primary" id="restartBtn">Play again</button>
@@ -77,7 +92,13 @@
 
       <!-- Controles -->
       <section class="controls">
-        <button class="icon-btn" id="soundToggle" aria-label="Toggle sound" title="Sound">🔊</button>
+        <button class="icon-btn" id="soundToggle" aria-label="Toggle sound" aria-pressed="true" title="Sound on">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M4 9 H7 L12 5 V19 L7 15 H4 Z" fill="currentColor"/>
+            <path class="snd-wave" d="M15.5 8.5 a4.5 4.5 0 0 1 0 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line class="snd-slash" x1="3.5" y1="3.5" x2="20.5" y2="20.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
         <button class="btn btn-ghost" id="pauseBtn">Pause</button>
         <button class="btn btn-ghost" id="newGameBtn">New game</button>
       </section>

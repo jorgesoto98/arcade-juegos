@@ -19,19 +19,23 @@ body {
   font-family: "Sora", system-ui, -apple-system, sans-serif;
   color: var(--ink);
   background: var(--bg-0);
-  min-height: 100dvh;
-  display: grid;
-  place-items: center;
-  padding: 24px 16px;
-  overflow-x: hidden;
+  /* Altura fija + sin scroll: todo debe caber en el viewport */
+  height: 100dvh;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  padding: 10px 14px;
+  overflow: hidden;
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Columna flex que ocupa toda la altura disponible */
 .app {
-  width: min(92vw, 480px);
+  width: min(92vw, 460px);
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 12px;
+  min-height: 0; /* permite que los hijos flexibles encojan */
 }
 
 .back-link {
@@ -50,68 +54,79 @@ body {
 .back-link:hover { color: var(--ink); border-color: rgba(255,255,255,0.24); }
 .back-link:active { transform: translateY(1px); }
 
-.head { text-align: center; }
+.head { text-align: center; flex: 0 0 auto; }
 .title {
-  font-size: clamp(2rem, 8vw, 2.8rem);
+  font-size: clamp(1.5rem, 5.5vw, 2.2rem);
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1;
 }
 .title span { color: var(--accent-2); margin-left: 0.04em; }
 .subtitle {
-  margin-top: 10px;
+  margin-top: 5px;
   color: var(--ink-dim);
-  font-size: 0.92rem;
+  font-size: 0.82rem;
 }
 
 /* ===== Vista de juego ===== */
-.game { display: flex; flex-direction: column; gap: 22px; }
+/* Ocupa el alto restante; el tablero es el elemento elástico */
+.game {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 
 /* HUD */
 .hud {
+  flex: 0 0 auto;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: 10px;
 }
 .stat {
   background: rgba(255,255,255,0.05);
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 14px;
-  padding: 12px 10px;
+  padding: 9px 8px;
   text-align: center;
   backdrop-filter: blur(6px);
 }
 .stat-label {
   display: block;
-  font-size: 0.7rem;
+  font-size: 0.66rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: var(--ink-dim);
 }
 .stat-value {
   display: block;
-  margin-top: 6px;
+  margin-top: 4px;
   font-family: "Space Grotesk", monospace;
-  font-size: 1.35rem;
+  font-size: 1.25rem;
   font-weight: 700;
 }
 
-/* Tablero */
+/* Tablero: ocupa el espacio sobrante de la columna y centra el canvas */
 .board-wrap {
   position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
   background: rgba(255,255,255,0.04);
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: var(--radius);
-  padding: 12px;
+  padding: 10px;
   box-shadow: var(--shadow);
   display: grid;
   place-items: center;
 }
 
+/* El tamaño exacto (cuadrado que cabe) lo fija JS en px; aquí solo topes */
 .board {
   display: block;
-  width: 100%;
-  aspect-ratio: 1 / 1;
+  max-width: 100%;
+  max-height: 100%;
   border-radius: 12px;
   background: #0a0e1d;
   /* desactiva el scroll/zoom del navegador al deslizar sobre el canvas */
@@ -122,27 +137,30 @@ body {
 .overlay[hidden] { display: none; }
 .overlay {
   position: absolute;
-  inset: 12px;            /* respeta el padding del board-wrap */
+  inset: 10px;            /* respeta el padding del board-wrap */
   display: grid;
   place-items: center;
   background: rgba(8, 11, 26, 0.62);
   backdrop-filter: blur(8px);
   border-radius: 12px;
   animation: fade 260ms ease;
+  overflow: auto;         /* si la tarjeta es alta, hace scroll interno (no en la página) */
   z-index: 4;
 }
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 
 .overlay-card {
   text-align: center;
-  padding: 26px 24px;
-  max-width: 88%;
+  padding: 22px 22px;
+  max-width: 90%;
+  max-height: 100%;
   background: #1a2240;
   border: 1px solid rgba(255,255,255,0.14);
   border-radius: 18px;
   box-shadow: var(--shadow);
 }
-.overlay-emoji { font-size: 2.8rem; line-height: 1; }
+.overlay-icon { line-height: 1; display: flex; justify-content: center; }
+.overlay-icon svg { width: 46px; height: 46px; }
 .overlay-card h2 {
   margin: 8px 0 6px;
   font-size: 1.6rem;
@@ -159,8 +177,8 @@ body {
 .legend {
   list-style: none;
   display: grid;
-  gap: 8px;
-  margin: 0 0 20px;
+  gap: 7px;
+  margin: 0 0 16px;
   text-align: left;
 }
 .legend li {
@@ -168,7 +186,7 @@ body {
   align-items: center;
   gap: 9px;
   color: var(--ink-dim);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
 }
 .legend .dot {
   flex: 0 0 auto;
@@ -187,6 +205,7 @@ body {
 
 /* Controles */
 .controls {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -194,7 +213,6 @@ body {
 }
 .controls .btn { flex: 1; }
 .icon-btn {
-  font-size: 1.1rem;
   line-height: 1;
   width: 42px;
   height: 42px;
@@ -209,7 +227,12 @@ body {
   transition: all 160ms ease;
 }
 .icon-btn:hover { border-color: rgba(255,255,255,0.22); }
-.icon-btn.is-muted { opacity: 0.5; }
+.icon-btn svg { width: 20px; height: 20px; }
+/* Estado silenciado: oculta la onda y muestra la barra diagonal */
+.icon-btn.is-muted { opacity: 0.7; }
+.icon-btn .snd-slash { display: none; }
+.icon-btn.is-muted .snd-wave { display: none; }
+.icon-btn.is-muted .snd-slash { display: inline; }
 
 .btn {
   font-family: "Sora", sans-serif;
@@ -237,13 +260,22 @@ body {
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .hint {
+  flex: 0 0 auto;
   text-align: center;
   color: var(--ink-dim);
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   opacity: 0.8;
+  margin: 0;
 }
 
 @media (max-width: 380px) {
-  .stat-value { font-size: 1.15rem; }
-  .controls { flex-wrap: wrap; }
+  .stat-value { font-size: 1.1rem; }
+}
+
+/* Pantallas bajas (móvil apaisado, ventanas cortas): recorta lo prescindible */
+@media (max-height: 620px) {
+  .subtitle { display: none; }
+  .hint { display: none; }
+  .app { gap: 9px; }
+  .game { gap: 9px; }
 }
