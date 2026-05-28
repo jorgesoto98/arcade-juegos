@@ -66,7 +66,7 @@
         <div class="scan-toast" id="scanToast" role="status" aria-live="polite" hidden></div>
         <div class="end-overlay" id="endOverlay" hidden>
           <div class="end-card">
-            <div class="end-emoji" id="endEmoji">🎉</div>
+            <div class="end-emoji" id="endEmoji"></div>
             <h2 id="endTitle">You win!</h2>
             <p id="endStats">—</p>
             <div class="end-actions">
@@ -78,10 +78,12 @@
       </div>
 
       <section class="controls">
-        <button class="icon-btn" id="soundToggle" aria-label="Toggle sound" title="Sound">🔊</button>
+        <button class="icon-btn" id="soundToggle" aria-label="Toggle sound" title="Sound">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M3 9.5v5a1 1 0 0 0 1 1h2.6l4 3.3a1 1 0 0 0 1.6-.8V6a1 1 0 0 0-1.6-.8l-4 3.3H4a1 1 0 0 0-1 1z"/><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M16 9.2a4 4 0 0 1 0 5.6M18.6 6.6a7.5 7.5 0 0 1 0 10.8"/></svg>
+        </button>
         <button class="btn btn-scan" id="scanBtn" aria-pressed="false" title="Scanner power-up (1 use)"
                 aria-label="Scanner power-up: arm it, then tap a flagged cell to reveal if it hides a mine. One use per game.">
-          <span class="scan-icon" aria-hidden="true">🔍</span>
+          <svg class="scan-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/><line x1="14.8" y1="14.8" x2="20" y2="20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
           <span class="scan-label">Scanner</span>
           <span class="scan-badge" aria-hidden="true">1</span>
         </button>

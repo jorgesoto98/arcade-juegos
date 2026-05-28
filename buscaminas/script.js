@@ -41,17 +41,28 @@ const DIFFS = {
   expert:       { rows: 16, cols: 30, mines: 99, label: "Expert" },
 };
 
-/* Límites de tamaño de celda (px) por dificultad: máximo cómodo
-   y mínimo táctil. Si el mínimo no cabe, el contenedor hace scroll. */
+/* Límites de tamaño de celda (px) por dificultad: máximo cómodo y mínimo.
+   El mínimo es bajo para que Beginner/Intermediate quepan en pantalla sin
+   scroll; si aun así no cabe (Expert), el contenedor hace scroll INTERNO. */
 const CELL_RANGE = {
-  beginner:     { min: 30, max: 46 },
-  intermediate: { min: 28, max: 38 },
-  expert:       { min: 26, max: 34 },
+  beginner:     { min: 24, max: 46 },
+  intermediate: { min: 15, max: 38 },
+  expert:       { min: 14, max: 34 },
 };
 
 /* ---------- Sprites (los entrega el agente "designer") ---------- */
 const MINE_IMG = '<img src="assets/mine.svg" alt="" aria-hidden="true">';
 const FLAG_IMG = '<img src="assets/flag.svg" alt="" aria-hidden="true">';
+// Cruz para banderas incorrectas (se muestra al perder). SVG, sin emojis.
+const CROSS_IMG = '<svg class="cross" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>';
+
+/* ---------- Iconos SVG inline (sin emojis) ---------- */
+// Altavoz con/sin sonido para el botón de audio.
+const ICON_SOUND_ON  = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M3 9.5v5a1 1 0 0 0 1 1h2.6l4 3.3a1 1 0 0 0 1.6-.8V6a1 1 0 0 0-1.6-.8l-4 3.3H4a1 1 0 0 0-1 1z"/><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M16 9.2a4 4 0 0 1 0 5.6M18.6 6.6a7.5 7.5 0 0 1 0 10.8"/></svg>';
+const ICON_SOUND_OFF = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M3 9.5v5a1 1 0 0 0 1 1h2.6l4 3.3a1 1 0 0 0 1.6-.8V6a1 1 0 0 0-1.6-.8l-4 3.3H4a1 1 0 0 0-1 1z"/><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M16.5 10l4 4M20.5 10l-4 4"/></svg>';
+// Estrella (victoria) y mina reutilizada (derrota) para el overlay final.
+const ICON_WIN  = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2.5l2.85 5.8 6.4.93-4.63 4.5 1.1 6.37L12 17.8l-5.72 3.0 1.1-6.37L2.75 9.23l6.4-.93z"/></svg>';
+const ICON_LOSE = '<img src="assets/mine.svg" alt="" aria-hidden="true">';
 
 /* ---------- Estado del juego ---------- */
 const state = {
@@ -133,13 +144,18 @@ function buildBoardDOM() {
   layout();
 }
 
-/* Calcula el tamaño de celda para ajustar el ancho disponible,
-   acotado al rango táctil de la dificultad. */
+/* Calcula el tamaño de celda para que el tablero quepa en el espacio
+   disponible: se ajusta al lado más restrictivo (ancho o alto) para no
+   forzar scroll de página. Si ni con el mínimo cabe (Expert), el propio
+   contenedor .board-scroll hace scroll interno. */
 function layout() {
   const range = CELL_RANGE[state.dif] || CELL_RANGE.beginner;
   const gap = 4;
-  const avail = boardScroll.clientWidth || boardEl.clientWidth || 320;
-  let cell = Math.floor((avail - (state.cols - 1) * gap) / state.cols);
+  const availW = boardScroll.clientWidth  || 320;
+  const availH = boardScroll.clientHeight || 320;
+  const cellByW = Math.floor((availW - (state.cols - 1) * gap) / state.cols);
+  const cellByH = Math.floor((availH - (state.rows - 1) * gap) / state.rows);
+  let cell = Math.min(cellByW, cellByH);
   cell = Math.max(range.min, Math.min(range.max, cell));
   boardEl.style.setProperty("--cell", cell + "px");
 }
@@ -208,8 +224,9 @@ function renderCell(i) {
       el.textContent = c.adj;
     }
   } else if (c.wrong) {
-    // Bandera incorrecta (se marca solo al perder).
+    // Bandera incorrecta (se marca solo al perder): cruz SVG roja.
     el.classList.add("wrong");
+    el.innerHTML = CROSS_IMG;
   } else if (c.flagged) {
     el.classList.add("flagged");
     el.innerHTML = FLAG_IMG;
@@ -421,13 +438,13 @@ function showEnd(win, secs, record) {
   const card = endOverlay.querySelector(".end-card");
   if (win) {
     card.classList.remove("lose");
-    endEmoji.textContent = "🎉";
+    endEmoji.innerHTML = ICON_WIN;
     endTitle.textContent = "You win!";
     endStats.textContent = `${DIFFS[state.dif].label} · ${fmtTime(secs)}` +
       (record ? " · New best!" : "");
   } else {
     card.classList.add("lose");
-    endEmoji.textContent = "💥";
+    endEmoji.innerHTML = ICON_LOSE;
     endTitle.textContent = "Game over";
     endStats.textContent = "You hit a mine. Try again!";
   }
@@ -555,7 +572,7 @@ function doScan(i) {
   setTimeout(() => el.classList.remove("scan-safe", "scan-mine"), 2600);
 
   showScanToast(
-    isMine ? "Mine confirmed — good flag 💣" : "No mine here — it's safe ✓",
+    isMine ? "Mine confirmed — good flag" : "No mine here — it's safe",
     isMine ? "mine" : "safe",
   );
   if (state.soundOn) tone(isMine ? 300 : 720, 0.14, isMine ? "sawtooth" : "sine", 0.05);
@@ -689,7 +706,7 @@ function loadSoundPref() {
   reflectSoundUI();
 }
 function reflectSoundUI() {
-  soundToggle.textContent = state.soundOn ? "🔊" : "🔇";
+  soundToggle.innerHTML = state.soundOn ? ICON_SOUND_ON : ICON_SOUND_OFF;
   soundToggle.classList.toggle("is-muted", !state.soundOn);
   soundToggle.setAttribute("aria-pressed", String(state.soundOn));
 }
