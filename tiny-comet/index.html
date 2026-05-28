@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Tiny Comet · Dive the void</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <main class="app">
+    <a class="back-link" href="../index.html" aria-label="Back to Arcade">← Arcade</a>
+
+    <header class="head">
+      <h1 class="title">Tiny<span>Comet</span></h1>
+      <p class="subtitle">Launch your probe, reel in stellar fragments, upgrade, dive deeper</p>
+    </header>
+
+    <!-- ===== HUD ===== -->
+    <div class="hud">
+      <div class="stat">
+        <span class="stat-label">Stellar dust</span>
+        <span class="stat-value" id="dust">0</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Depth</span>
+        <span class="stat-value" id="depth">0</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Haul</span>
+        <span class="stat-value" id="haul">0 / 4</span>
+      </div>
+    </div>
+
+    <!-- ===== Play area (Canvas) ===== -->
+    <div class="board-wrap">
+      <canvas id="stage" aria-label="Tiny Comet diving field"></canvas>
+    </div>
+
+    <!-- ===== Controls ===== -->
+    <section class="controls">
+      <button class="icon-btn" id="soundToggle" aria-label="Toggle sound" title="Sound">🔊</button>
+      <button class="btn btn-primary btn-action" id="actionBtn">Launch probe ▾</button>
+    </section>
+    <p class="hint" id="hint">Drag left/right to steer · the magnet grabs fragments it passes</p>
+
+    <!-- ===== Upgrades ===== -->
+    <section class="shop">
+      <div class="shop-head">
+        <h2 class="shop-title">Upgrades</h2>
+        <span class="shop-best" id="bestDepth">Best depth · 0</span>
+      </div>
+      <div class="upgrades" id="upgrades"></div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
