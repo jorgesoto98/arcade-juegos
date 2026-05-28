@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Snake · Eat, grow, survive</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <main class="app">
+    <a class="back-link" href="../index.html" aria-label="Back to Arcade">← Arcade</a>
+    <header class="head">
+      <h1 class="title">Snake<span>!</span></h1>
+      <p class="subtitle">Eat the fruit, grow longer, don't bite yourself</p>
+    </header>
+
+    <section class="game" id="game">
+      <!-- HUD -->
+      <div class="hud">
+        <div class="stat">
+          <span class="stat-label">Score</span>
+          <span class="stat-value" id="score">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Length</span>
+          <span class="stat-value" id="length">3</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Best</span>
+          <span class="stat-value" id="best">—</span>
+        </div>
+      </div>
+
+      <!-- Tablero -->
+      <div class="board-wrap">
+        <canvas id="board" class="board" aria-label="Snake game board" role="img"></canvas>
+
+        <!-- Overlay de inicio -->
+        <div class="overlay" id="startOverlay">
+          <div class="overlay-card">
+            <div class="overlay-emoji">🐍</div>
+            <h2>Snake</h2>
+            <p>Arrows / WASD / swipe to move</p>
+            <ul class="legend" aria-label="What's on the board">
+              <li><span class="dot dot-star"></span> Star — grow &amp; score</li>
+              <li><span class="dot dot-warp"></span> Wormhole — teleport</li>
+              <li><span class="dot dot-pulse"></span> Pulsar — x2 boost</li>
+              <li><span class="dot dot-portal"></span> Portals — in one, out the other</li>
+            </ul>
+            <button class="btn btn-primary" id="startBtn">Press any key / tap to start</button>
+          </div>
+        </div>
+
+        <!-- Overlay de pausa -->
+        <div class="overlay" id="pauseOverlay" hidden>
+          <div class="overlay-card">
+            <div class="overlay-emoji">⏸️</div>
+            <h2>Paused</h2>
+            <p>Press space or resume to continue</p>
+            <button class="btn btn-primary" id="resumeBtn">Resume</button>
+          </div>
+        </div>
+
+        <!-- Overlay de game over -->
+        <div class="overlay" id="overOverlay" hidden>
+          <div class="overlay-card">
+            <div class="overlay-emoji">💥</div>
+            <h2 class="over-title">Game over</h2>
+            <p id="overStats" aria-live="polite">—</p>
+            <button class="btn btn-primary" id="restartBtn">Play again</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controles -->
+      <section class="controls">
+        <button class="icon-btn" id="soundToggle" aria-label="Toggle sound" title="Sound">🔊</button>
+        <button class="btn btn-ghost" id="pauseBtn">Pause</button>
+        <button class="btn btn-ghost" id="newGameBtn">New game</button>
+      </section>
+
+      <p class="hint">Tip: speed rises with your score · ride portals · grab pulsars for x2.</p>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Comida de snake: manzana vívida -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Apple">
+  <defs>
+    <radialGradient id="apple-fill" cx="0.38" cy="0.33" r="0.75">
+      <stop offset="0" stop-color="#ff8fb0"/>
+      <stop offset="0.55" stop-color="#ff5d8f"/>
+      <stop offset="1" stop-color="#d61f5c"/>
+    </radialGradient>
+  </defs>
+  <!-- Cuerpo de la manzana (dos lóbulos) -->
+  <path d="M32 18 C27 12 17 12 13 20 C9 28 12 42 21 50 C26 54 30 52 32 52 C34 52 38 54 43 50 C52 42 55 28 51 20 C47 12 37 12 32 18 Z"
+        fill="url(#apple-fill)" stroke="#a3194b" stroke-width="1.5"/>
+  <!-- Tallo -->
+  <path d="M32 18 C32 12 34 8 39 7" fill="none" stroke="#7a4a22" stroke-width="3" stroke-linecap="round"/>
+  <!-- Hoja -->
+  <path d="M33 14 C39 9 47 10 48 12 C46 18 38 19 33 14 Z" fill="#2fbf6b" stroke="#1d8a4c" stroke-width="1"/>
+  <!-- Brillo -->
+  <ellipse cx="23" cy="26" rx="5" ry="7" fill="#ffffff" opacity="0.5"/>
+</svg>
